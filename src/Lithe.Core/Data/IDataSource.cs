@@ -29,7 +29,7 @@ public interface IDataSource<T>
     /// <summary>
     /// 数据更新事件。
     /// </summary>
-    event EventHandler<DataSourceUpdatedEventArgs<T>> Updated;
+    event EventHandler<DataSourceUpdatedEventArgs<T>>? Updated;
 
     /// <summary>
     /// 启动采集。由注册表统一调用，模块不直接启停数据源。
