@@ -37,7 +37,10 @@ public static class DefaultConfig
 
         // 桌面层可能出现遮挡或交互异常，出问题时可先在这里关掉。
         table.SetPath("desktop_layer.enabled", TomlNode.Scalar(true));
-        table.SetPath("desktop_layer.attach_to_desktop_host", TomlNode.Scalar(false));
+
+        // 默认挂到 Progman：组件位于所有窗口下方、壁纸上方，不抢占置顶。
+        // 挂载失败（找不到 Progman 等）自动降级为顶层置顶窗口，日志见 ShellDiagnostics。
+        table.SetPath("desktop_layer.attach_to_desktop_host", TomlNode.Scalar(true));
 
         return table;
     }

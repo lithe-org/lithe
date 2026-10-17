@@ -111,7 +111,8 @@ public partial class App : Application
 
             AddStarterWidgetsIfEmpty();
 
-            // 桌面层挂载开关：默认用顶层窗口更稳，需要压到壁纸层时再打开。
+            // 桌面层挂载开关：默认挂到 Progman（组件在所有窗口下方、桌面上方）；
+            // 找不到宿主或挂载失败时保持顶层置顶窗口，日志见 ShellDiagnostics。
             if (ShouldAttachDesktopLayer())
             {
                 _ = DesktopLayer.AttachToDesktopLayerAsync();
@@ -134,7 +135,7 @@ public partial class App : Application
         && !File.Exists(Path.Combine(ConfigPaths.RootDirectory, "disable-desktop-layer.flag"));
 
     private static bool ShouldAttachDesktopLayer() =>
-        Configuration.GetOrDefault("desktop_layer.attach_to_desktop_host", false)
+        Configuration.GetOrDefault("desktop_layer.attach_to_desktop_host", true)
         || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-desktop-layer.flag"));
 
     /// <summary>

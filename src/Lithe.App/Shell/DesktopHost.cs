@@ -13,7 +13,8 @@ using Windows.UI;
 namespace Lithe_App.Shell;
 
 /// <summary>
-/// 桌面层窗口：覆盖工作区的透明置顶窗口，承载桌面小组件。
+/// 桌面层窗口：承载桌面小组件。默认挂到 <c>Progman</c>，组件位于所有窗口
+/// 下方、壁纸上方；挂载失败时降级为覆盖工作区的透明置顶窗口。
 /// </summary>
 /// <remarks>
 /// 窗口本身不抢焦点，不显示在任务栏；鼠标落在组件之外时整窗穿透，
@@ -143,9 +144,18 @@ public sealed partial class DesktopHost
             return AttachState;
         }
 
-        AttachState = DesktopLayerHost.Attach(_hwnd, host)
-            ? $"已挂载到桌面宿主 0x{host:X}"
-            : $"挂载桌面宿主 0x{host:X} 失败，保持顶层窗口";
+        var attached = DesktopLayerHost.Attach(_hwnd, host);
+        if (attached)
+        {
+            // 挂载后窗口是 Progman 的子窗口，置顶标记只对顶层窗口有意义。
+            // 显式关掉，保证"在所有窗口下方"在任何路径下都成立。
+            SetAlwaysOnTop(false);
+            AttachState = $"已挂载到桌面宿主 0x{host:X}";
+        }
+        else
+        {
+            AttachState = $"挂载桌面宿主 0x{host:X} 失败，保持顶层窗口";
+        }
 
         ShellDiagnostics.Write(AttachState);
         return AttachState;
@@ -163,8 +173,23 @@ public sealed partial class DesktopHost
 
         // 摘回顶层后恢复组件包围盒：铺满工作区会留下全屏置顶窗口挡住桌面。
         UpdateWindowBounds();
+
+        // 重新变成顶层窗口，恢复置顶，行为与未挂载时一致。
+        SetAlwaysOnTop(true);
+
         AttachState = "已摘回顶层窗口";
         return AttachState;
+    }
+
+    /// <summary>
+    /// 切换置顶标记。挂载到桌面宿主后关闭，摘回顶层时恢复。
+    /// </summary>
+    private void SetAlwaysOnTop(bool value)
+    {
+        if (_window.AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.IsAlwaysOnTop = value;
+        }
     }
 
     /// <summary>
