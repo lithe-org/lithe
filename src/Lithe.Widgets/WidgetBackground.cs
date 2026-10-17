@@ -1,6 +1,5 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
@@ -50,10 +49,9 @@ public static class WidgetBackground
     /// <param name="color">纯色或色调。</param>
     /// <param name="opacity">不透明度 0~1。</param>
     /// <remarks>
-    /// 真材质由 <see cref="WidgetCard"/> 的 <see cref="SystemBackdropElement"/>
-    /// 承担（SDK 2.0+），本方法只画色调/描边之下的纯色层。无 backdrop 的
-    /// 窗口里旧版 AcrylicBrush 渲染为全透明（实测），半透明
-    /// SolidColorBrush 靠窗口逐像素透明合成，确定可见，是不可用环境的兜底。
+    /// 真材质由桌面层窗口的 <c>DesktopAcrylicBackdrop</c> 统一提供，本方法
+    /// 只画卡片色调层。页内 <c>SystemBackdropElement</c> 在逐像素透明 +
+    /// owner 挂载窗口里实测采不到壁纸（只渲染系统 fallback 纯色），已弃用。
     /// </remarks>
     public static Brush Create(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
     {
@@ -68,27 +66,5 @@ public static class WidgetBackground
             WidgetBackgroundKind.Mica => new SolidColorBrush(color with { A = (byte)Math.Clamp((opacity + 0.1) * 255, 0, 255) }),
             _ => new SolidColorBrush(color with { A = alpha }),
         };
-    }
-
-    /// <summary>
-    /// 尝试创建页内真材质元素（Windows App SDK 2.0+ 的
-    /// <see cref="SystemBackdropElement"/>）。环境不支持时返回
-    /// <see langword="null"/>，调用方回退半透明纯色方案。
-    /// </summary>
-    public static SystemBackdropElement? TryCreateMaterial()
-    {
-        try
-        {
-            // 具体材质（亚克力/云母）由调用方按外观配置赋值 SystemBackdrop。
-            return new SystemBackdropElement
-            {
-                CornerRadius = new CornerRadius(CornerRadius),
-            };
-        }
-        catch (Exception)
-        {
-            // 缺 SDK 2.0 运行时等环境：类型加载或构造失败，走纯色回退。
-            return null;
-        }
     }
 }

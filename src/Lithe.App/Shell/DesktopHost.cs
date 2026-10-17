@@ -2,6 +2,7 @@ using Lithe.Core.Layout;
 using Lithe_App.Diagnostics;
 using Lithe_App.Interop;
 using Lithe.Widgets;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -60,13 +61,25 @@ public sealed partial class DesktopHost
         _layout = layout ?? throw new ArgumentNullException(nameof(layout));
         _editMode = editMode ?? throw new ArgumentNullException(nameof(editMode));
 
-        // 不设置 SystemBackdrop：SDK 没有可用的透明 backdrop。根背景显式设为
-        // 透明画刷，窗口走逐像素透明，未覆盖区域透出壁纸；组件背景由各自的
-        // 卡片容器绘制，编辑模式再盖半透明遮罩。
         _window = new Window
         {
             Title = "Lithe 桌面层",
         };
+
+        // 窗口级桌面亚克力：WinUI 3 的 lifted Composition 采不到桌面壁纸，
+        // 真材质必须挂窗口级 SystemBackdrop，走系统 DWM 三方协同。页内
+        // SystemBackdropElement 在逐像素透明 + owner 挂载窗口里实测只渲染
+        // 系统 fallback 纯色（2026-10-17），故材质统一挂窗口，卡片用半透明
+        // 色调压深。设置失败只记日志，退化为纯色卡片，不影响启动。
+        try
+        {
+            _window.SystemBackdrop = new DesktopAcrylicBackdrop();
+            ShellDiagnostics.Write("窗口级亚克力材质已启用");
+        }
+        catch (Exception ex)
+        {
+            ShellDiagnostics.Write($"窗口亚克力材质设置失败：{ex.Message}");
+        }
 
         _widgetSurface = new Canvas();
         var root = new Grid();
@@ -485,9 +498,9 @@ public sealed partial class DesktopHost
     }
 
     /// <summary>
-    /// 窗口内容根背景。逐像素透明：不设 backdrop 的窗口里 AcrylicBrush 不会
-    /// 合成（实测渲染为全透明，组件只剩浮字），显式透明画刷才能让窗口透出
-    /// 壁纸；未覆盖区域由组件卡片自己的背景负责。
+    /// 窗口内容根背景。显式透明画刷让内容区透出窗口级 acrylic 材质
+    /// （不设则是默认白底，会把材质完全盖住）；未覆盖区域由组件卡片
+    /// 自己的色调层负责。
     /// </summary>
     private static Brush CreateWindowBackground() =>
         new SolidColorBrush(Microsoft.UI.Colors.Transparent);

@@ -1,5 +1,4 @@
 using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -8,25 +7,23 @@ using Windows.UI;
 namespace Lithe.Widgets;
 
 /// <summary>
-/// 组件卡片容器：真材质层（<see cref="SystemBackdropElement"/>）+ 色调描边层
-/// + 内容槽。环境不支持真材质时自动回退半透明纯色，行为与旧版单层 Border 一致。
+/// 组件卡片容器：圆角色调层 + 内容槽。
 /// </summary>
 /// <remarks>
-/// 层级顺序即 Grid 子元素顺序：材质在最底，色调描边居中，内容由调用方最后
-/// 添加到 <see cref="Root"/>（后添加即在上层）。编辑模式描边强调挂色调层，
-/// 与旧实现挂点一致。
+/// 真材质由桌面层窗口的 <c>DesktopAcrylicBackdrop</c> 统一提供：WinUI 3 的
+/// lifted Composition 无法直接采样桌面，页内 <c>SystemBackdropElement</c> 在
+/// 逐像素透明 + owner 挂载窗口里实测只渲染系统 fallback 纯色（2026-10-17），
+/// 故材质挂窗口、卡片用半透明色调压深。编辑模式描边强调挂色调层。
 /// </remarks>
 public sealed class WidgetCard
 {
     /// <summary>
-    /// 真材质生效时色调 alpha 的上限：深色高不透明度会糊死材质，
-    /// 压到 0.35 以下既保留色调又让材质透出来。
+    /// 亚克力/云母卡片在窗口材质上的色调 alpha 上限：封顶压深，
+    /// 避免高不透明度把窗口材质的磨砂感糊死。
     /// </summary>
-    private const double MaterialTintCap = 0.35;
+    private const double MaterialTintCap = 0.6;
 
     private readonly Border _tint;
-    private readonly SystemBackdropElement? _material;
-    private WidgetBackgroundKind _appliedKind = WidgetBackgroundKind.Transparent;
 
     /// <summary>
     /// 创建卡片容器。
@@ -37,12 +34,6 @@ public sealed class WidgetCard
     public WidgetCard(WidgetBackgroundKind kind, Color color, double opacity)
     {
         Root = new Grid();
-
-        _material = WidgetBackground.TryCreateMaterial();
-        if (_material is not null)
-        {
-            Root.Children.Add(_material);
-        }
 
         _tint = new Border
         {
@@ -61,42 +52,21 @@ public sealed class WidgetCard
     public Grid Root { get; }
 
     /// <summary>
-    /// 应用外观：切换真材质显隐、材质类型与色调。
+    /// 应用外观：计算色调 alpha 并刷新背景画刷。
     /// </summary>
     public void Apply(WidgetBackgroundKind kind, Color color, double opacity)
     {
-        var useMaterial = _material is not null
-            && kind is WidgetBackgroundKind.Acrylic or WidgetBackgroundKind.Mica;
+        // 亚克力/云母的真实感来自窗口级材质，卡片色调只做压深，封顶处理；
+        // 纯色/透明按配置原值绘制。
+        var effective = kind is WidgetBackgroundKind.Acrylic or WidgetBackgroundKind.Mica
+            ? Math.Min(opacity, MaterialTintCap)
+            : opacity;
 
-        if (_material is not null)
-        {
-            if (useMaterial)
-            {
-                // 只有类型变化才换材质对象，避免重复分配。
-                if (_material.SystemBackdrop is null || _appliedKind != kind)
-                {
-                    _material.SystemBackdrop = kind == WidgetBackgroundKind.Mica
-                        ? new MicaBackdrop { Kind = MicaKind.Base }
-                        : new DesktopAcrylicBackdrop();
-                }
-
-                _material.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                _material.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        _tint.Background = useMaterial
-            ? WidgetBackground.Create(WidgetBackgroundKind.Solid, color, Math.Min(opacity, MaterialTintCap))
-            : WidgetBackground.Create(kind, color, opacity);
-
-        _appliedKind = kind;
+        _tint.Background = WidgetBackground.Create(kind, color, effective);
     }
 
     /// <summary>
-    /// 编辑模式描边强调，挂在色调层（旧实现挂 Border 容器，视觉等价）。
+    /// 编辑模式描边强调，挂在色调层。
     /// </summary>
     public void ApplyEditBorder(bool editing)
     {
