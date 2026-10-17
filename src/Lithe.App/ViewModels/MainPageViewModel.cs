@@ -1,35 +1,39 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Lithe_App.Shell;
 
 namespace Lithe_App.ViewModels;
 
 /// <summary>
-/// 主页面 ViewModel。
-/// 使用 <c>partial property</c> 而非字段 + <see cref="ObservableProperty"/>，
-/// 以保证 CsWinRT 生成器能产出 AOT 兼容的 WinRT 封送代码。
+/// 桌面层控制面板的 ViewModel。里程碑 1-2 期间作为临时控制台，
+/// 设置窗口接入后由设置界面接管同样的开关。
 /// </summary>
 public partial class MainPageViewModel : ObservableObject
 {
-    [ObservableProperty]
-    public partial string Greeting { get; set; }
-
-    [ObservableProperty]
-    public partial int Counter { get; set; }
-
     public MainPageViewModel()
     {
-        Greeting = "Hello, WinUI!";
+        RefreshStatus();
+    }
+
+    /// <summary>
+    /// 桌面层当前状态描述。
+    /// </summary>
+    [ObservableProperty]
+    public partial string StatusText { get; set; }
+
+    /// <summary>
+    /// 切换桌面层的鼠标穿透。
+    /// </summary>
+    [RelayCommand]
+    private void ToggleClickThrough()
+    {
+        DesktopHost.Instance?.ToggleClickThrough();
+        RefreshStatus();
     }
 
     [RelayCommand]
-    private void Increment()
+    private void RefreshStatus()
     {
-        Counter++;
-    }
-
-    [RelayCommand]
-    private void Decrement()
-    {
-        Counter--;
+        StatusText = DesktopHost.Instance?.DescribeState() ?? "桌面层尚未创建。";
     }
 }

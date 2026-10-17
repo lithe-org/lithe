@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Lithe_App.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,23 +7,17 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Width="420">
         <TextBlock
-            Text="{x:Bind ViewModel.Greeting, Mode=OneWay}"
+            Text="Lithe 桌面层控制台"
             Style="{StaticResource TitleTextBlockStyle}" />
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-            <Button Command="{x:Bind ViewModel.IncrementCommand}">
-                <FontIcon Glyph="&#xE710;" FontSize="14" />
-            </Button>
-            <TextBlock
-                Text="{x:Bind ViewModel.Counter, Mode=OneWay}"
-                VerticalAlignment="Center"
-                MinWidth="40"
-                TextAlignment="Center"
-                Style="{StaticResource BodyStrongTextBlockStyle}" />
-            <Button Command="{x:Bind ViewModel.DecrementCommand}">
-                <FontIcon Glyph="&#xE738;" FontSize="14" />
-            </Button>
+        <TextBlock
+            Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+            TextWrapping="Wrap"
+            Style="{StaticResource BodyStrongTextBlockStyle}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{x:Bind ViewModel.ToggleClickThroughCommand}" Content="切换鼠标穿透" />
+            <Button Command="{x:Bind ViewModel.RefreshStatusCommand}" Content="刷新状态" />
         </StackPanel>
     </StackPanel>
 </Page>

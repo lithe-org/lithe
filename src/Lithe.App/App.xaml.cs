@@ -1,4 +1,5 @@
 using Lithe.Config;
+using Lithe_App.Shell;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -43,6 +44,11 @@ public partial class App : Application
     public static TomlConfigService Configuration { get; private set; } = null!;
 
     /// <summary>
+    /// 桌面层窗口，承载桌面小组件。
+    /// </summary>
+    public static DesktopHost? DesktopLayer { get; private set; }
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -59,6 +65,9 @@ public partial class App : Application
         Diagnostics.StartupSelfCheck.Run();
 
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
+
+        DesktopLayer = new DesktopHost();
+        DesktopLayer.Show();
 
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
