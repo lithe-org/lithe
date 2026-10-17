@@ -7,21 +7,62 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Width="520">
-        <TextBlock
-            Text="Lithe 桌面层控制台"
-            Style="{StaticResource TitleTextBlockStyle}" />
-        <TextBlock
-            Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
-            TextWrapping="Wrap"
-            Style="{StaticResource BodyStrongTextBlockStyle}" />
-        <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Command="{x:Bind ViewModel.AddClockCommand}" Content="添加时钟" />
-            <Button Command="{x:Bind ViewModel.ToggleEditModeCommand}" Content="编辑模式" />
-            <Button Command="{x:Bind ViewModel.ToggleClickThroughCommand}" Content="切换鼠标穿透" />
-            <Button Command="{x:Bind ViewModel.AttachToWorkerWCommand}" Content="挂载桌面层" />
-            <Button Command="{x:Bind ViewModel.DetachFromWorkerWCommand}" Content="切回顶层" />
-            <Button Command="{x:Bind ViewModel.RefreshStatusCommand}" Content="刷新状态" />
+    <ScrollViewer>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" Width="560">
+            <TextBlock
+                Text="Lithe 桌面层控制台"
+                Style="{StaticResource TitleTextBlockStyle}" />
+
+            <TextBlock
+                Text="{x:Bind ViewModel.StatusText, Mode=OneWay}"
+                TextWrapping="Wrap"
+                Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{x:Bind ViewModel.AddClockCommand}" Content="添加时钟" />
+                <Button Command="{x:Bind ViewModel.AddTodoCommand}" Content="添加待办" />
+                <Button Command="{x:Bind ViewModel.ToggleEditModeCommand}" Content="编辑模式" />
+                <Button Command="{x:Bind ViewModel.ToggleClickThroughCommand}" Content="切换鼠标穿透" />
+                <Button Command="{x:Bind ViewModel.AttachToWorkerWCommand}" Content="挂载桌面层" />
+                <Button Command="{x:Bind ViewModel.DetachFromWorkerWCommand}" Content="切回顶层" />
+            </StackPanel>
+
+            <TextBlock Text="组件外观" Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+            <ComboBox
+                HorizontalAlignment="Stretch"
+                PlaceholderText="选择组件"
+                ItemsSource="{x:Bind ViewModel.WidgetIds, Mode=OneWay}"
+                SelectionChanged="OnWidgetSelectionChanged" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    PlaceholderText="背景类型"
+                    ItemsSource="{x:Bind ViewModel.BackgroundOptions, Mode=OneWay}"
+                    SelectionChanged="OnBackgroundSelectionChanged" />
+
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    PlaceholderText="颜色"
+                    ItemsSource="{x:Bind ViewModel.ColorOptions, Mode=OneWay}"
+                    SelectionChanged="OnColorSelectionChanged" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="不透明度" Style="{StaticResource CaptionTextBlockStyle}" />
+                <Slider
+                    Minimum="0"
+                    Maximum="1"
+                    StepFrequency="0.05"
+                    ValueChanged="OnOpacityChanged" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{x:Bind ViewModel.ApplyAppearanceCommand}" Content="应用外观" />
+                <Button Command="{x:Bind ViewModel.RemoveSelectedWidgetCommand}" Content="删除组件" />
+                <Button Command="{x:Bind ViewModel.RefreshStatusCommand}" Content="刷新状态" />
+            </StackPanel>
         </StackPanel>
-    </StackPanel>
+    </ScrollViewer>
 </Page>

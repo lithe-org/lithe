@@ -86,18 +86,20 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         Diagnostics.ShellDiagnostics.Install();
+        Diagnostics.ShellDiagnostics.Write("启动开始");
 
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
         DataSources = Bootstrap.AppBootstrap.InitializeDataSources();
+        Diagnostics.ShellDiagnostics.Write("配置与数据源就绪");
 
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
+        Diagnostics.ShellDiagnostics.Write("主窗口已激活");
 
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
-
-        AddStarterWidgetsIfEmpty();
+        Diagnostics.ShellDiagnostics.Write("布局与组件就绪");
 
         DesktopLayer = new DesktopHost(
             Bootstrap.AppBootstrap.CreateWidgetContext(),
@@ -105,8 +107,10 @@ public partial class App : Application
             Layout,
             EditMode);
         DesktopLayer.Show();
+        Diagnostics.ShellDiagnostics.Write("桌面层已显示");
 
         AddStarterWidgetsIfEmpty();
+        Diagnostics.ShellDiagnostics.Write("初始组件已就绪");
 
         // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
         if (ShouldAttachWorkerW())

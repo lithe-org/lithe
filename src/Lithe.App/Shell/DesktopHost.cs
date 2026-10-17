@@ -192,6 +192,7 @@ public sealed partial class DesktopHost
             var created = new WidgetHost(view, factory.Definition, placement, _layout.Metrics, _layout, _editMode);
             _widgetSurface.Children.Add(created);
             _hosts[placement.WidgetId] = created;
+            ApplyAppearanceCore(placement.WidgetId);
         }
     }
 
@@ -222,7 +223,8 @@ public sealed partial class DesktopHost
         }
 
         _layout.RegisterWidget(widgetId, constraint);
-        SyncWidgets();
+
+        // Place 会触发 LayoutChanged，组件随之同步，这里不用重复同步。
         return true;
     }
 
@@ -232,10 +234,31 @@ public sealed partial class DesktopHost
     public bool RemoveWidget(string widgetId) => _layout.Remove(widgetId);
 
     /// <summary>
+    /// 应用组件外观配置。
+    /// </summary>
+    /// <param name="widgetId">组件 Id。</param>
+    /// <param name="appearance">外观设置，传 <see langword="null"/> 表示重新读取配置。</param>
+    public bool ApplyAppearance(string widgetId, WidgetAppearance? appearance = null)
+    {
+        if (!_hosts.TryGetValue(widgetId, out var host))
+        {
+            return false;
+        }
+
+        var config = appearance ?? WidgetAppearanceService.Load(_widgetContext.Config, widgetId);
+        host.SetBackground(config.Background, config.ResolveColor(), Math.Clamp(config.Opacity, 0, 1));
+
+        ShellDiagnostics.Write($"组件 {widgetId} 外观：{config.Background} {config.ColorHex} {config.Opacity:P0}");
+        return true;
+    }
+
+    /// <summary>
     /// 当前状态描述。
     /// </summary>
     public string DescribeState() =>
         $"桌面层 0x{_hwnd:X}，组件 {_hosts.Count} 个，网格 {_layout.Metrics.Columns}x{_layout.Metrics.Rows}，穿透 {(ClickThrough ? "开" : "关")}，{AttachState}";
+
+    private void ApplyAppearanceCore(string widgetId) => ApplyAppearance(widgetId);
 
     private void ApplyOverlayPresenter()
     {
