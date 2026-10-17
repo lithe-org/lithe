@@ -97,27 +97,41 @@ public partial class App : Application
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
 
-        DesktopLayer = new DesktopHost(
-            Bootstrap.AppBootstrap.CreateWidgetContext(),
-            Widgets,
-            Layout,
-            EditMode);
-        DesktopLayer.Show();
-
-        AddStarterWidgetsIfEmpty();
-
-        // 桌面层挂载开关：默认用顶层窗口更稳，需要压到壁纸层时用标记文件打开。
-        if (ShouldAttachDesktopLayer())
+        if (IsDesktopLayerEnabled())
         {
-            _ = DesktopLayer.AttachToDesktopLayerAsync();
+            DesktopLayer = new DesktopHost(
+                Bootstrap.AppBootstrap.CreateWidgetContext(),
+                Widgets,
+                Layout,
+                EditMode);
+            DesktopLayer.Show();
+
+            AddStarterWidgetsIfEmpty();
+
+            // 桌面层挂载开关：默认用顶层窗口更稳，需要压到壁纸层时再打开。
+            if (ShouldAttachDesktopLayer())
+            {
+                _ = DesktopLayer.AttachToDesktopLayerAsync();
+            }
+        }
+        else
+        {
+            Lithe.Core.Diagnostics.AppLog.Info("桌面层已按配置禁用，只运行控制台");
         }
 
         // 自检里有等待，放后台跑，不拖慢启动。
         _ = Task.Run(Diagnostics.StartupSelfCheck.Run);
     }
 
+    /// <summary>
+    /// 桌面层可用配置项关闭，标记文件用于出问题时快速自救。
+    /// </summary>
+    private static bool IsDesktopLayerEnabled() =>
+        Configuration.GetOrDefault("desktop_layer.enabled", true)
+        && !File.Exists(Path.Combine(ConfigPaths.RootDirectory, "disable-desktop-layer.flag"));
+
     private static bool ShouldAttachDesktopLayer() =>
-        Environment.GetEnvironmentVariable("LITHE_ATTACH_DESKTOP_LAYER") == "1"
+        Configuration.GetOrDefault("desktop_layer.attach_to_desktop_host", false)
         || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-desktop-layer.flag"));
 
     /// <summary>

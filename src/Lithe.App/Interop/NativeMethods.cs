@@ -123,8 +123,8 @@ internal static partial class NativeMethods
     internal static void SetExStyle(nint hWnd, nint style) =>
         _ = nint.Size == 8 ? SetWindowLongPtr(hWnd, GWL_EXSTYLE, style) : SetWindowLong32(hWnd, GWL_EXSTYLE, (int)style);
 
-    /// <summary>
-    /// 读取窗口样式，自动适配 32/64 位。
+/// <summary>
+    /// 取窗口样式，自动适配 32/64 位。
     /// </summary>
     internal static nint GetStyle(nint hWnd) =>
         nint.Size == 8 ? GetWindowLongPtr(hWnd, GWL_STYLE) : GetWindowLong32(hWnd, GWL_STYLE);
@@ -134,4 +134,25 @@ internal static partial class NativeMethods
     /// </summary>
     internal static void SetStyle(nint hWnd, nint style) =>
         _ = nint.Size == 8 ? SetWindowLongPtr(hWnd, GWL_STYLE, style) : SetWindowLong32(hWnd, GWL_STYLE, (int)style);
+
+    /// <summary>
+    /// 显示或隐藏窗口。
+    /// </summary>
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool ShowWindow(nint hWnd, int nCmdShow);
+
+    /// <summary>
+    /// 取窗口屏幕矩形。
+    /// </summary>
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool GetWindowRect(nint hWnd, out Rect lpRect);
+
+    /// <summary>
+    /// 把窗口提到最前（配合 WS_EX_NOACTIVATE 使用，不会抢焦点）。
+    /// </summary>
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool SetWindowPos(nint hWnd, nint hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
 }

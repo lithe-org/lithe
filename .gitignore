@@ -506,3 +506,11 @@ notifications.toml
 
 DEV.md
 Design.md
+
+# ==========================================
+# Agents
+# ==========================================
+
+.workbuddy/
+.agents/
+.opencode/

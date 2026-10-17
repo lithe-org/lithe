@@ -35,6 +35,10 @@ public static class DefaultConfig
 
         table.SetPath("layout.grid_spacing", TomlNode.Scalar(8));
 
+        // 桌面层可能出现遮挡或交互异常，出问题时可先在这里关掉。
+        table.SetPath("desktop_layer.enabled", TomlNode.Scalar(true));
+        table.SetPath("desktop_layer.attach_to_desktop_host", TomlNode.Scalar(false));
+
         return table;
     }
 

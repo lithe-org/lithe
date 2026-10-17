@@ -65,7 +65,6 @@ dotnet run --project src/Lithe.App
 ## 参与贡献
 
 Lithe 目前处于快速迭代期，非常欢迎各类贡献。
-在提交代码之前，请务必阅读我们的开发指导文档 [DEV.md](./DEV.md)，其中包含了详细的**架构说明、里程碑排期以及严格的 Git 提交与发版规范**。
 
 - 如果你发现了 Bug，请在 [Issues](https://github.com/lithe-org/lithe/issues) 中反馈。
 - 如果你有好的想法，欢迎在 Issues 中发起讨论。
