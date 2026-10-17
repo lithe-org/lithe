@@ -86,20 +86,16 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         Diagnostics.ShellDiagnostics.Install();
-        Diagnostics.ShellDiagnostics.Write("启动开始");
 
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
         DataSources = Bootstrap.AppBootstrap.InitializeDataSources();
-        Diagnostics.ShellDiagnostics.Write("配置与数据源就绪");
 
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
-        Diagnostics.ShellDiagnostics.Write("主窗口已激活");
 
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
-        Diagnostics.ShellDiagnostics.Write("布局与组件就绪");
 
         DesktopLayer = new DesktopHost(
             Bootstrap.AppBootstrap.CreateWidgetContext(),
@@ -107,23 +103,22 @@ public partial class App : Application
             Layout,
             EditMode);
         DesktopLayer.Show();
-        Diagnostics.ShellDiagnostics.Write("桌面层已显示");
 
         AddStarterWidgetsIfEmpty();
-        Diagnostics.ShellDiagnostics.Write("初始组件已就绪");
 
-        // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
-        if (ShouldAttachWorkerW())
+        // 桌面层挂载开关：默认用顶层窗口更稳，需要压到壁纸层时用标记文件打开。
+        if (ShouldAttachDesktopLayer())
         {
             _ = DesktopLayer.AttachToDesktopLayerAsync();
         }
 
-        Diagnostics.StartupSelfCheck.Run();
+        // 自检里有等待，放后台跑，不拖慢启动。
+        _ = Task.Run(Diagnostics.StartupSelfCheck.Run);
     }
 
-    private static bool ShouldAttachWorkerW() =>
-        Environment.GetEnvironmentVariable("LITHE_ATTACH_WORKERW") == "1"
-        || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-workerw.flag"));
+    private static bool ShouldAttachDesktopLayer() =>
+        Environment.GetEnvironmentVariable("LITHE_ATTACH_DESKTOP_LAYER") == "1"
+        || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-desktop-layer.flag"));
 
     /// <summary>
     /// 首次启动桌面为空时放时钟与待办，方便验收；用户可以在桌面编辑模式里删掉。
