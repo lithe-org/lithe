@@ -92,4 +92,7 @@ internal struct Rect
     internal int Right;
 
     internal int Bottom;
+
+    /// <inheritdoc />
+    public override string ToString() => $"({Left}, {Top})-({Right}, {Bottom})";
 }

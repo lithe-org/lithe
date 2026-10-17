@@ -32,8 +32,32 @@ public partial class MainPageViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void AttachToWorkerW()
+    {
+        if (DesktopHost.Instance is not { } host)
+        {
+            StatusText = "桌面层尚未创建。";
+            return;
+        }
+
+        StatusText = "正在查找 WorkerW…";
+        _ = ApplyAttachResultAsync(host);
+    }
+
+    [RelayCommand]
+    private void DetachFromWorkerW()
+    {
+        StatusText = DesktopHost.Instance?.DetachFromDesktopLayer() ?? "桌面层尚未创建。";
+    }
+
+    [RelayCommand]
     private void RefreshStatus()
     {
         StatusText = DesktopHost.Instance?.DescribeState() ?? "桌面层尚未创建。";
+    }
+
+    private async Task ApplyAttachResultAsync(DesktopHost host)
+    {
+        StatusText = await host.AttachToDesktopLayerAsync();
     }
 }

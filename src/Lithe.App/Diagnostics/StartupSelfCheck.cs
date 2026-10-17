@@ -20,18 +20,18 @@ internal static class StartupSelfCheck
     {
         var bus = new EventBus();
         bus.SubscriberFaulted += (_, args) =>
-            Debug.WriteLine($"[自检] 订阅者异常已隔离: {args.EventType.Name} / {args.Exception.Message}");
+            ShellDiagnostics.Write($"[自检] 订阅者异常已隔离: {args.EventType.Name} / {args.Exception.Message}");
 
         var probe = new Probe();
         using (bus.Subscribe<string>(probe.OnMessage))
         {
             bus.Publish("第一条消息");
-            Debug.WriteLine($"[自检] 事件订阅收到 {probe.Received.Count} 条消息: {string.Join(", ", probe.Received)}");
+            ShellDiagnostics.Write($"[自检] 事件订阅收到 {probe.Received.Count} 条消息: {string.Join(", ", probe.Received)}");
         }
 
         // 句柄释放后应立刻退订。
         bus.Publish("释放之后的消息");
-        Debug.WriteLine($"[自检] 退订后累计收到 {probe.Received.Count} 条消息");
+        ShellDiagnostics.Write($"[自检] 退订后累计收到 {probe.Received.Count} 条消息");
 
         // 订阅者抛异常不影响发布者与其他订阅者。
         using (bus.Subscribe<string>(static _ => throw new InvalidOperationException("故意抛异常")))
@@ -46,7 +46,7 @@ internal static class StartupSelfCheck
         GC.Collect();
 
         bus.Publish("宿主回收之后的消息");
-        Debug.WriteLine($"[自检] 宿主回收后存活订阅数 {bus.GetSubscriberCount<string>()}（期望 0）");
+        ShellDiagnostics.Write($"[自检] 宿主回收后存活订阅数 {bus.GetSubscriberCount<string>()}（期望 0）");
     }
 
     private static void CreateDisposableSubscriber(EventBus bus)
@@ -61,23 +61,23 @@ internal static class StartupSelfCheck
         registry.Register(new SelfCheckDataSource());
 
         var failures = registry.StartAllAsync().GetAwaiter().GetResult();
-        Debug.WriteLine($"[自检] 数据源启动完成，失败 {failures.Count} 个，运行中 {registry.IsRunning(SelfCheckDataSource.SourceId)}");
-        Debug.WriteLine($"[自检] 已注册数据源: {string.Join(", ", registry.RegisteredIds)}");
+        ShellDiagnostics.Write($"[自检] 数据源启动完成，失败 {failures.Count} 个，运行中 {registry.IsRunning(SelfCheckDataSource.SourceId)}");
+        ShellDiagnostics.Write($"[自检] 已注册数据源: {string.Join(", ", registry.RegisteredIds)}");
 
         if (registry.TryGet<int>(SelfCheckDataSource.SourceId, out var source))
         {
-            Debug.WriteLine($"[自检] 取到数据源 {source.Id}，当前值 {source.CurrentValue}，间隔 {source.RefreshInterval}");
+            ShellDiagnostics.Write($"[自检] 取到数据源 {source.Id}，当前值 {source.CurrentValue}，间隔 {source.RefreshInterval}");
         }
         else
         {
-            Debug.WriteLine("[自检] 取数据源失败");
+            ShellDiagnostics.Write("[自检] 取数据源失败");
         }
 
         Thread.Sleep(1200);
-        Debug.WriteLine($"[自检] 等待刷新后当前值 {registry.TryGet<int>(SelfCheckDataSource.SourceId, out var updated) && updated.CurrentValue > 0}（期望 True）");
+        ShellDiagnostics.Write($"[自检] 等待刷新后当前值 {registry.TryGet<int>(SelfCheckDataSource.SourceId, out var updated) && updated.CurrentValue > 0}（期望 True）");
 
         registry.StopAllAsync().GetAwaiter().GetResult();
-        Debug.WriteLine($"[自检] 数据源停止完成，运行中 {registry.IsRunning(SelfCheckDataSource.SourceId)}（期望 False）");
+        ShellDiagnostics.Write($"[自检] 数据源停止完成，运行中 {registry.IsRunning(SelfCheckDataSource.SourceId)}（期望 False）");
     }
 
     private sealed class Probe

@@ -62,15 +62,25 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        Diagnostics.StartupSelfCheck.Run();
-
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
+
+        Diagnostics.StartupSelfCheck.Run();
 
         DesktopLayer = new DesktopHost();
         DesktopLayer.Show();
+
+        // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
+if (ShouldAttachWorkerW())
+        {
+            _ = DesktopLayer.AttachToDesktopLayerAsync();
+        }
 
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
     }
+
+    private static bool ShouldAttachWorkerW() =>
+        Environment.GetEnvironmentVariable("LITHE_ATTACH_WORKERW") == "1"
+        || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-workerw.flag"));
 }

@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Width="420">
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Width="460">
         <TextBlock
             Text="Lithe 桌面层控制台"
             Style="{StaticResource TitleTextBlockStyle}" />
@@ -17,6 +17,8 @@
             Style="{StaticResource BodyStrongTextBlockStyle}" />
         <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Command="{x:Bind ViewModel.ToggleClickThroughCommand}" Content="切换鼠标穿透" />
+            <Button Command="{x:Bind ViewModel.AttachToWorkerWCommand}" Content="挂载 WorkerW" />
+            <Button Command="{x:Bind ViewModel.DetachFromWorkerWCommand}" Content="切回顶层" />
             <Button Command="{x:Bind ViewModel.RefreshStatusCommand}" Content="刷新状态" />
         </StackPanel>
     </StackPanel>

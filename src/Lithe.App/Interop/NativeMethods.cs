@@ -15,6 +15,7 @@ internal static partial class NativeMethods
     internal const int WS_EX_NOACTIVATE = 0x08000000;
     internal const int WS_EX_LAYERED = 0x00080000;
     internal const int WS_CHILD = 0x40000000;
+    internal const int WS_POPUP = unchecked((int)0x80000000);
 
     internal const int HTTRANSPARENT = -1;
     internal const int HTCLIENT = 1;
@@ -47,6 +48,12 @@ internal static partial class NativeMethods
     [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool SetParent(nint hWndChild, nint hWndNewParent);
+
+    /// <summary>
+    /// 取父窗口。
+    /// </summary>
+    [LibraryImport("user32.dll", SetLastError = true)]
+    internal static partial nint GetParent(nint hWnd);
 
     /// <summary>
     /// 查窗口。
@@ -85,6 +92,12 @@ internal static partial class NativeMethods
         uint flags,
         uint timeout,
         out nint result);
+
+    /// <summary>
+    /// 取窗口类名。StringBuilder 无法用源生成的 P/Invoke，这里保留传统声明。
+    /// </summary>
+    [DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern int GetClassName(nint hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
 
     /// <summary>
     /// 取窗口样式（32 位兼容入口）。
