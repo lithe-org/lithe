@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lithe.Core\Lithe.Core.csproj" />
+    <ProjectReference Include="..\Lithe.Config\Lithe.Config.csproj" />
   </ItemGroup>
 
   <!--
