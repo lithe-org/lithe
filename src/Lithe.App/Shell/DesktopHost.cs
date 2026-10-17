@@ -161,7 +161,8 @@ public sealed partial class DesktopHost
         var style = NativeMethods.GetStyle(_hwnd);
         NativeMethods.SetStyle(_hwnd, (style & ~NativeMethods.WS_CHILD) | NativeMethods.WS_POPUP);
 
-        ApplyWorkAreaBounds();
+        // 摘回顶层后恢复组件包围盒：铺满工作区会留下全屏置顶窗口挡住桌面。
+        UpdateWindowBounds();
         AttachState = "已摘回顶层窗口";
         return AttachState;
     }
@@ -310,18 +311,6 @@ public sealed partial class DesktopHost
     }
 
     /// <summary>
-    /// 铺满主显示器工作区。必须在窗口显示之后调用，否则尺寸设置会被忽略。
-    /// </summary>
-    private void ApplyWorkAreaBounds()
-    {
-        var appWindow = _window.AppWindow;
-        var displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary);
-        var workArea = displayArea.WorkArea;
-
-        appWindow.MoveAndResize(new RectInt32(workArea.X, workArea.Y, workArea.Width, workArea.Height));
-    }
-
-    /// <summary>
     /// 只让窗口覆盖组件所在的矩形，避免空白全屏挡住其他程序。
     /// </summary>
     /// <remarks>
@@ -397,11 +386,26 @@ public sealed partial class DesktopHost
         return new PixelRect(x, y, Math.Max(0, rightEdge - x), Math.Max(0, bottomEdge - y));
     }
 
+    private RectInt32? _lastWorkArea;
+
     private RectInt32 GetWorkArea()
     {
-        var appWindow = _window.AppWindow;
-        var displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary);
-        return displayArea.WorkArea;
+        // 挂到 Progman 后 DisplayArea.GetFromWindowId 可能返回 null 或抛异常，
+        // 用最后一次有效值兜底，再不行退回主显示器工作区。
+        try
+        {
+            var displayArea = DisplayArea.GetFromWindowId(_window.AppWindow.Id, DisplayAreaFallback.Primary);
+            if (displayArea is not null)
+            {
+                _lastWorkArea = displayArea.WorkArea;
+                return _lastWorkArea.Value;
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        return _lastWorkArea ?? DisplayArea.Primary.WorkArea;
     }
 
     /// <summary>
