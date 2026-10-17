@@ -4,17 +4,22 @@ using CommunityToolkit.Mvvm.Input;
 namespace Lithe_App.ViewModels;
 
 /// <summary>
-/// Sample ViewModel using CommunityToolkit.Mvvm source generators.
-/// Uses <see cref="ObservableProperty"/> for change notification and
-/// <see cref="RelayCommand"/> for command binding.
+/// 主页面 ViewModel。
+/// 使用 <c>partial property</c> 而非字段 + <see cref="ObservableProperty"/>，
+/// 以保证 CsWinRT 生成器能产出 AOT 兼容的 WinRT 封送代码。
 /// </summary>
 public partial class MainPageViewModel : ObservableObject
 {
     [ObservableProperty]
-    private string _greeting = "Hello, WinUI!";
+    public partial string Greeting { get; set; }
 
     [ObservableProperty]
-    private int _counter;
+    public partial int Counter { get; set; }
+
+    public MainPageViewModel()
+    {
+        Greeting = "Hello, WinUI!";
+    }
 
     [RelayCommand]
     private void Increment()
