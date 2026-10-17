@@ -74,5 +74,8 @@
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <!-- NativeAOT：WinUI 3 下的兼容性尚未验证（见 Design.md 第 27 章），默认关闭，验证通过后置为 true -->
+    <PublishAot Condition="'$(PublishAot)' == ''">False</PublishAot>
+    <IsAotCompatible>False</IsAotCompatible>
   </PropertyGroup>
 </Project>
