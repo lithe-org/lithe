@@ -62,6 +62,8 @@
     <ProjectReference Include="..\Lithe.Config\Lithe.Config.csproj" />
     <ProjectReference Include="..\Lithe.Data\Lithe.Data.csproj" />
     <ProjectReference Include="..\Lithe.Layout\Lithe.Layout.csproj" />
+    <ProjectReference Include="..\Lithe.Widgets\Lithe.Widgets.csproj" />
+    <ProjectReference Include="..\Lithe.Widgets.Builtin\Lithe.Widgets.Builtin.csproj" />
   </ItemGroup>
 
   <!--

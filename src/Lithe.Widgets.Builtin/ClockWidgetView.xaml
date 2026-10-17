@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Lithe.Widgets.Builtin.ClockWidgetView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Lithe.Widgets.Builtin"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="140"
+    d:DesignWidth="260">
+
+    <UserControl.Resources>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid Padding="12,8">
+        <StackPanel VerticalAlignment="Center" Spacing="2">
+            <TextBlock
+                Text="{x:Bind ViewModel.TimeText, Mode=OneWay}"
+                Foreground="White"
+                FontWeight="SemiBold"
+                FontSize="{x:Bind ViewModel.TimeFontSize, Mode=OneWay}" />
+            <TextBlock
+                Text="{x:Bind ViewModel.DateText, Mode=OneWay}"
+                Foreground="#D0FFFFFF"
+                FontSize="12"
+                Visibility="{x:Bind ViewModel.ShowDate, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

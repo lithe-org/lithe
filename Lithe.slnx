@@ -5,5 +5,7 @@
     <Project Path="src/Lithe.Core/Lithe.Core.csproj" />
     <Project Path="src/Lithe.Data/Lithe.Data.csproj" />
     <Project Path="src/Lithe.Layout/Lithe.Layout.csproj" />
+    <Project Path="src/Lithe.Widgets/Lithe.Widgets.csproj" />
+    <Project Path="src/Lithe.Widgets.Builtin/Lithe.Widgets.Builtin.csproj" />
   </Folder>
 </Solution>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Lithe_App.Shell;
+using Lithe.Widgets.Builtin;
 
 namespace Lithe_App.ViewModels;
 
@@ -32,6 +33,21 @@ public partial class MainPageViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void AddClock()
+    {
+        StatusText = DesktopHost.Instance?.AddWidget(ClockWidget.WidgetId) == true
+            ? "已添加时钟组件"
+            : "添加时钟失败";
+    }
+
+    [RelayCommand]
+    private void ToggleEditMode()
+    {
+        App.EditMode.Toggle();
+        RefreshStatus();
+    }
+
+    [RelayCommand]
     private void AttachToWorkerW()
     {
         if (DesktopHost.Instance is not { } host)
@@ -40,7 +56,7 @@ public partial class MainPageViewModel : ObservableObject
             return;
         }
 
-        StatusText = "正在查找 WorkerW…";
+        StatusText = "正在查找桌面宿主…";
         _ = ApplyAttachResultAsync(host);
     }
 

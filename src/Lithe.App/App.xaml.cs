@@ -2,6 +2,7 @@ using Lithe.Config;
 using Lithe_App.Shell;
 using Lithe.Data;
 using Lithe.Layout;
+using Lithe.Widgets;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -66,6 +67,11 @@ public partial class App : Application
     public static EditModeService EditMode { get; private set; } = null!;
 
     /// <summary>
+    /// 组件注册表。
+    /// </summary>
+    public static WidgetRegistry Widgets { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -84,25 +90,52 @@ public partial class App : Application
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
         DataSources = Bootstrap.AppBootstrap.InitializeDataSources();
 
-        Diagnostics.StartupSelfCheck.Run();
-
-        DesktopLayer = new DesktopHost();
-        DesktopLayer.Show();
-
-        // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
-if (ShouldAttachWorkerW())
-        {
-            _ = DesktopLayer.AttachToDesktopLayerAsync();
-        }
-
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
 
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
+        Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
+
+        AddStarterWidgetIfEmpty();
+
+        DesktopLayer = new DesktopHost(
+            Bootstrap.AppBootstrap.CreateWidgetContext(),
+            Widgets,
+            Layout,
+            EditMode);
+        DesktopLayer.SyncWidgets();
+        DesktopLayer.Show();
+
+        // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
+        if (ShouldAttachWorkerW())
+        {
+            _ = DesktopLayer.AttachToDesktopLayerAsync();
+        }
+
+        Diagnostics.StartupSelfCheck.Run();
     }
 
     private static bool ShouldAttachWorkerW() =>
         Environment.GetEnvironmentVariable("LITHE_ATTACH_WORKERW") == "1"
         || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-workerw.flag"));
+
+    /// <summary>
+    /// 首次启动桌面为空时放一个时钟，方便验收；用户可以在桌面编辑模式里删掉。
+    /// </summary>
+    private void AddStarterWidgetIfEmpty()
+    {
+        if (Layout.GetAllPlacements().Count > 0)
+        {
+            return;
+        }
+
+        if (!Widgets.TryGet(Lithe.Widgets.Builtin.ClockWidget.WidgetId, out var factory))
+        {
+            return;
+        }
+
+        Layout.RegisterWidget(factory.Definition.Id, factory.Definition.SizeConstraint);
+        Layout.Place(factory.Definition.Id, factory.Definition.SizeConstraint.DefaultCell);
+    }
 }

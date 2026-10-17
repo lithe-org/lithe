@@ -13,10 +13,15 @@ public interface IGridCalculator
 }
 
 /// <summary>
-/// 布局引擎：放置、移动、缩放组件，并做碰撞检测。
-/// </summary>
+    /// 布局引擎：放置、移动、缩放组件，并做碰撞检测。
+    /// </summary>
 public interface ILayoutEngine
 {
+    /// <summary>
+    /// 登记组件的尺寸约束，缩放时按它钳制。
+    /// </summary>
+    void RegisterWidget(string widgetId, WidgetSizeConstraint constraint);
+
     /// <summary>
     /// 当前显示器对应的网格指标。
     /// </summary>

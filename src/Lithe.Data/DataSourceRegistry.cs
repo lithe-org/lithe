@@ -91,6 +91,27 @@ public sealed class DataSourceRegistry : IAsyncDisposable
     }
 
     /// <summary>
+    /// 按 Id 取数据源实例，不校验数据类型。
+    /// </summary>
+    /// <remarks>
+    /// 组件框架只认识数据源 Id，不关心具体类型，所以提供这个弱类型入口。
+    /// </remarks>
+    public bool TryGetSource(string id, out object? source)
+    {
+        lock (_gate)
+        {
+            if (_registrations.TryGetValue(id, out var registration))
+            {
+                source = registration.Value;
+                return true;
+            }
+        }
+
+        source = null;
+        return false;
+    }
+
+    /// <summary>
     /// 判断数据源当前是否处于运行状态。
     /// </summary>
     public bool IsRunning(string id)

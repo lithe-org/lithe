@@ -1,11 +1,14 @@
 using Lithe.Config;
 using Lithe.Config.Toml;
 using Lithe.Core.Diagnostics;
+using Lithe.Core.Events;
 using Lithe.Core.Layout;
 using Lithe.Data;
 using Lithe.Data.Clock;
 using Lithe.Data.Todo;
 using Lithe.Layout;
+using Lithe.Widgets;
+using Lithe.Widgets.Builtin;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using WinRT.Interop;
@@ -54,6 +57,30 @@ internal static class AppBootstrap
         AppLog.Info($"已启动数据源：{string.Join(", ", registry.RegisteredIds)}");
 
         return registry;
+    }
+
+    /// <summary>
+    /// 注册内置组件。
+    /// </summary>
+    public static WidgetRegistry InitializeWidgets()
+    {
+        var registry = new WidgetRegistry();
+        registry.Register(new ClockWidget());
+
+        AppLog.Info($"已注册组件：{string.Join(", ", registry.All.Select(static w => w.Definition.Id))}");
+        return registry;
+    }
+
+    /// <summary>
+    /// 创建组件运行上下文，注入数据源、配置与 UI 调度器。
+    /// </summary>
+    public static WidgetContext CreateWidgetContext()
+    {
+        return new WidgetContext(
+            new EventBus(),
+            id => App.DataSources.TryGetSource(id, out var source) ? source : null,
+            App.Configuration,
+            App.DispatcherQueue);
     }
 
     /// <summary>
