@@ -49,6 +49,12 @@ public static class WidgetBackground
     /// <param name="kind">背景类型。</param>
     /// <param name="color">纯色或色调。</param>
     /// <param name="opacity">不透明度 0~1。</param>
+    /// <remarks>
+    /// 亚克力/云母降级为半透明纯色：桌面层窗口不设 SystemBackdrop（无透明
+    /// backdrop 可用），实测 AcrylicBrush 在这种窗口里渲染为全透明，组件
+    /// 只剩浮字。半透明 SolidColorBrush 靠窗口的逐像素透明合成，确定可见。
+    /// 后续若给窗口加 DesktopAcrylicBackdrop，可改回真亚克力。
+    /// </remarks>
     public static Brush Create(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
     {
         var alpha = (byte)Math.Clamp(opacity * 255, 0, 255);
@@ -57,20 +63,10 @@ public static class WidgetBackground
         {
             WidgetBackgroundKind.Transparent => new SolidColorBrush(Colors.Transparent),
             WidgetBackgroundKind.Solid => new SolidColorBrush(color with { A = alpha }),
-            WidgetBackgroundKind.Acrylic => new AcrylicBrush
-            {
-                TintColor = color,
-                TintOpacity = opacity,
-                FallbackColor = color with { A = alpha },
-            },
-            // 云母作用于窗口背景，组件层面用亚克力近似。
-            WidgetBackgroundKind.Mica => new AcrylicBrush
-            {
-                TintColor = color,
-                TintOpacity = Math.Min(1.0, opacity + 0.1),
-                FallbackColor = color with { A = alpha },
-            },
-            _ => new AcrylicBrush { TintColor = color, TintOpacity = opacity, FallbackColor = color },
+            WidgetBackgroundKind.Acrylic => new SolidColorBrush(color with { A = alpha }),
+            // 云母作用于窗口背景，组件层面用更高不透明度的纯色近似。
+            WidgetBackgroundKind.Mica => new SolidColorBrush(color with { A = (byte)Math.Clamp((opacity + 0.1) * 255, 0, 255) }),
+            _ => new SolidColorBrush(color with { A = alpha }),
         };
     }
 

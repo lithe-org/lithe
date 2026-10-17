@@ -58,9 +58,9 @@ public sealed partial class DesktopHost
         _layout = layout ?? throw new ArgumentNullException(nameof(layout));
         _editMode = editMode ?? throw new ArgumentNullException(nameof(editMode));
 
-        // 不设置 SystemBackdrop：SDK 只有 Mica/DesktopAcrylic，没有透明 backdrop，
-        // 窗口默认背景是不透明的，未覆盖区域会露底，所以根背景用与组件一致的
-        // 亚克力兜底，编辑模式再盖半透明遮罩。
+        // 不设置 SystemBackdrop：SDK 没有可用的透明 backdrop。根背景显式设为
+        // 透明画刷，窗口走逐像素透明，未覆盖区域透出壁纸；组件背景由各自的
+        // 卡片容器绘制，编辑模式再盖半透明遮罩。
         _window = new Window
         {
             Title = "Lithe 桌面层",
@@ -451,11 +451,12 @@ public sealed partial class DesktopHost
     }
 
     /// <summary>
-    /// 窗口内容根背景。SDK 没有透明 backdrop，窗口默认背景不透明，
-    /// 用与组件一致的亚克力兜底，未覆盖区域也不会露出白底。
+    /// 窗口内容根背景。逐像素透明：不设 backdrop 的窗口里 AcrylicBrush 不会
+    /// 合成（实测渲染为全透明，组件只剩浮字），显式透明画刷才能让窗口透出
+    /// 壁纸；未覆盖区域由组件卡片自己的背景负责。
     /// </summary>
     private static Brush CreateWindowBackground() =>
-        WidgetBackground.Create(WidgetBackgroundKind.Acrylic, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.7);
+        new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
     /// <summary>
     /// 首帧渲染完成。WinUI 窗口在渲染前设置的边界可能被丢弃，这里补一次；

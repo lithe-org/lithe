@@ -29,6 +29,7 @@ public sealed class WidgetHost : UserControl
     private readonly FrameworkElement _content;
     private readonly Grid _handleHost;
     private readonly Border _resizeHandle;
+    private readonly Border _card;
     private WidgetPlacement _placement;
     private WidgetSizeClass _sizeClass;
     private double _originLeft;
@@ -72,8 +73,6 @@ public sealed class WidgetHost : UserControl
         _editMode = editMode;
         _constraint = definition.SizeConstraint;
 
-        Background = WidgetBackground.Create(WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
-
         _resizeHandle = BuildResizeHandle();
         _handleHost = new Grid();
         _handleHost.Children.Add(_resizeHandle);
@@ -82,7 +81,13 @@ public sealed class WidgetHost : UserControl
         var root = new Grid();
         root.Children.Add(_content);
         root.Children.Add(_handleHost);
-        Content = root;
+
+        // 卡片容器：圆角、描边、背景都挂在 Border 上。UserControl 自身没有
+        // 可渲染的边框，早期把 Background/BorderBrush 设在 UserControl 上，
+        // 编辑模式高亮根本不显示，背景也依赖不渲染的 AcrylicBrush。
+        _card = WidgetBackground.CreateContainer(WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
+        _card.Child = root;
+        Content = _card;
 
         ApplyPlacementGeometry();
         ApplyEditModeState();
@@ -146,7 +151,7 @@ public WidgetSizeClass SizeClass => _sizeClass;
     /// </summary>
     public void SetBackground(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
     {
-        Background = WidgetBackground.Create(kind, color, opacity);
+        _card.Background = WidgetBackground.Create(kind, color, opacity);
     }
 
     private Grid BuildContentRoot()
@@ -209,8 +214,9 @@ public WidgetSizeClass SizeClass => _sizeClass;
         _handleHost.IsHitTestVisible = editing;
         _resizeHandle.Visibility = editing ? Visibility.Visible : Visibility.Collapsed;
         Opacity = editing ? 0.75 : 1.0;
-        BorderBrush = editing ? new SolidColorBrush(Colors.White with { A = 0xAA }) : null;
-        BorderThickness = editing ? new Thickness(1) : new Thickness(0);
+
+        // 描边强调挂在卡片容器上：UserControl 的 BorderBrush 不会渲染。
+        _card.BorderBrush = new SolidColorBrush(Colors.White with { A = editing ? (byte)0xAA : (byte)0x33 });
     }
 
     private void OnEditModeChanged(object? sender, EventArgs args) => ApplyEditModeState();
