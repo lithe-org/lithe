@@ -74,7 +74,7 @@ public sealed partial class DesktopHost
         try
         {
             _window.SystemBackdrop = new DesktopAcrylicBackdrop();
-            ShellDiagnostics.Write("窗口级亚克力材质已启用");
+            ShellDiagnostics.Write($"窗口级亚克力材质已启用：{_window.SystemBackdrop.GetType().Name}");
         }
         catch (Exception ex)
         {
@@ -83,10 +83,17 @@ public sealed partial class DesktopHost
 
         _widgetSurface = new Canvas();
         var root = new Grid();
+
+        // acrylic 的默认 tint 跟随明暗主题：浅色主题下透出亮壁纸，卡片发亮
+        // 且随壁纸明暗变色（2026-10-17 截图实测）。桌面层固定深色主题，
+        // 让 acrylic 走深色 base，卡片色调再压深，得到统一的深色磨砂。
+        root.RequestedTheme = ElementTheme.Dark;
         root.Background = CreateWindowBackground();
         root.Children.Add(_widgetSurface);
         root.Loaded += OnRootLoaded;
         _window.Content = root;
+
+        ShellDiagnostics.Write($"桌面层内容根主题：{root.RequestedTheme}");
 
         // 编辑模式下点空白处退出，避免误入编辑模式后整屏都点不到别的窗口。
         root.PointerPressed += OnRootPointerPressed;

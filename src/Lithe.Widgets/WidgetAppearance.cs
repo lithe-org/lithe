@@ -24,8 +24,14 @@ public readonly record struct WidgetAppearance(WidgetBackgroundKind Background, 
     public Color ResolveColor() => HexToColor(ColorHex);
 
     /// <summary>
-    /// 十六进制颜色转 <see cref="Color"/>。
+    /// 十六进制颜色转 <see cref="Color"/>。支持 <c>#RRGGBB</c> 与
+    /// <c>#AARRGGBB</c> 两种形式。
     /// </summary>
+    /// <remarks>
+    /// 6 位色要补 alpha 时必须补在**前头**（<c>FromArgb</c> 按 AARRGGBB
+    /// 取字节）：补成 "FFRRGGBB" 才对。补在末尾会把 B 通道顶成 FF，
+    /// #202020 变成亮蓝 #2020FF（2026-10-17 截图排查实测踩坑）。
+    /// </remarks>
     public static Color HexToColor(string? hex)
     {
         if (string.IsNullOrWhiteSpace(hex))
@@ -36,7 +42,7 @@ public readonly record struct WidgetAppearance(WidgetBackgroundKind Background, 
         var text = hex.Trim().TrimStart('#');
         if (text.Length == 6)
         {
-            text += "FF";
+            text = "FF" + text;
         }
 
         return uint.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value)

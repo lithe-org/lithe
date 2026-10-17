@@ -85,7 +85,7 @@ public sealed class WidgetHost : UserControl
         // 卡片容器：真材质层 + 色调描边层 + 内容层，圆角与描边都由容器负责。
         // UserControl 自身没有可渲染的边框，早期把 Background/BorderBrush 设在
         // UserControl 上，编辑模式高亮根本不显示，背景也依赖不渲染的 AcrylicBrush。
-        _card = new WidgetCard(WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
+        _card = new WidgetCard(WidgetId, WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
         _card.Root.Children.Add(root);
         Content = _card.Root;
 

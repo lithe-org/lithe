@@ -1,3 +1,4 @@
+using Lithe.Core.Diagnostics;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -23,16 +24,21 @@ public sealed class WidgetCard
     /// </summary>
     private const double MaterialTintCap = 0.6;
 
+    private readonly string _widgetId;
     private readonly Border _tint;
 
     /// <summary>
     /// 创建卡片容器。
     /// </summary>
+    /// <param name="widgetId">组件 Id，用于诊断日志。</param>
     /// <param name="kind">初始背景类型。</param>
     /// <param name="color">色调颜色。</param>
     /// <param name="opacity">色调不透明度 0~1。</param>
-    public WidgetCard(WidgetBackgroundKind kind, Color color, double opacity)
+    public WidgetCard(string widgetId, WidgetBackgroundKind kind, Color color, double opacity)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(widgetId);
+
+        _widgetId = widgetId;
         Root = new Grid();
 
         _tint = new Border
@@ -63,6 +69,13 @@ public sealed class WidgetCard
             : opacity;
 
         _tint.Background = WidgetBackground.Create(kind, color, effective);
+
+        // 渲染级日志：配置值经封顶后的实际落地值，用于排查样式问题。
+        var brush = (SolidColorBrush)_tint.Background;
+        var applied = brush.Color;
+        AppLog.Info(
+            $"卡片 {_widgetId} 外观：{kind} #{color.R:X2}{color.G:X2}{color.B:X2} {opacity:P0}" +
+            $" → 色调 #{applied.R:X2}{applied.G:X2}{applied.B:X2} alpha {applied.A}（{effective:P0}）");
     }
 
     /// <summary>
