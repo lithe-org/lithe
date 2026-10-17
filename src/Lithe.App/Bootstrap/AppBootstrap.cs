@@ -66,6 +66,7 @@ internal static class AppBootstrap
     {
         var registry = new WidgetRegistry();
         registry.Register(new ClockWidget());
+        registry.Register(new TodoWidget());
 
         AppLog.Info($"已注册组件：{string.Join(", ", registry.All.Select(static w => w.Definition.Id))}");
         return registry;

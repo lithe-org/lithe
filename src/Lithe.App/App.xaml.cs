@@ -97,15 +97,16 @@ public partial class App : Application
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
 
-        AddStarterWidgetIfEmpty();
+        AddStarterWidgetsIfEmpty();
 
         DesktopLayer = new DesktopHost(
             Bootstrap.AppBootstrap.CreateWidgetContext(),
             Widgets,
             Layout,
             EditMode);
-        DesktopLayer.SyncWidgets();
         DesktopLayer.Show();
+
+        AddStarterWidgetsIfEmpty();
 
         // 验证桌面层挂载用的开关，正常运行不挂载。打包启动不继承环境变量，所以同时支持标记文件。
         if (ShouldAttachWorkerW())
@@ -121,21 +122,23 @@ public partial class App : Application
         || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-workerw.flag"));
 
     /// <summary>
-    /// 首次启动桌面为空时放一个时钟，方便验收；用户可以在桌面编辑模式里删掉。
+    /// 首次启动桌面为空时放时钟与待办，方便验收；用户可以在桌面编辑模式里删掉。
     /// </summary>
-    private void AddStarterWidgetIfEmpty()
+    private void AddStarterWidgetsIfEmpty()
     {
-        if (Layout.GetAllPlacements().Count > 0)
+        var desktop = DesktopLayer;
+        if (desktop is null)
         {
             return;
         }
 
-        if (!Widgets.TryGet(Lithe.Widgets.Builtin.ClockWidget.WidgetId, out var factory))
+        if (Layout.GetAllPlacements().Count == 0)
         {
+            desktop.AddWidget(Lithe.Widgets.Builtin.ClockWidget.WidgetId);
+            desktop.AddWidget(Lithe.Widgets.Builtin.TodoWidget.WidgetId);
             return;
         }
 
-        Layout.RegisterWidget(factory.Definition.Id, factory.Definition.SizeConstraint);
-        Layout.Place(factory.Definition.Id, factory.Definition.SizeConstraint.DefaultCell);
+        desktop.SyncWidgets();
     }
 }

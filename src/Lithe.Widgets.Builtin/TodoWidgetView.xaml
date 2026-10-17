@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Lithe.Widgets.Builtin.TodoWidgetView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Lithe.Widgets.Builtin"
+    xmlns:data="using:Lithe.Data.Todo"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="260"
+    d:DesignWidth="240">
+
+    <UserControl.Resources>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid Padding="12,10" RowSpacing="6">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Grid.Row="0"
+            Text="待办"
+            Foreground="White"
+            FontWeight="SemiBold"
+            FontSize="14" />
+
+        <TextBlock
+            Grid.Row="1"
+            Text="{x:Bind ViewModel.SummaryText, Mode=OneWay}"
+            Foreground="#D0FFFFFF"
+            TextWrapping="Wrap"
+            VerticalAlignment="Center"
+            Visibility="{x:Bind ViewModel.IsSummaryVisible, Mode=OneWay, Converter={StaticResource BoolToVisibility}}" />
+
+        <Grid Grid.Row="1">
+            <TextBlock
+                Text="{x:Bind ViewModel.EmptyText, Mode=OneWay}"
+                Foreground="#90FFFFFF"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center" />
+
+            <ItemsControl ItemsSource="{x:Bind ViewModel.VisibleItems, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="data:TodoItem">
+                        <Grid ColumnSpacing="6" Padding="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding Done, Mode=OneWay}"
+                                Click="OnItemClick" />
+
+                            <TextBlock
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                TextTrimming="CharacterEllipsis"
+                                Foreground="#F2FFFFFF"
+                                Text="{Binding Title, Mode=OneWay}" />
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Padding="6,0"
+                                FontSize="11"
+                                Content="删"
+                                Click="OnRemoveClick" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnSpacing="6" Visibility="{x:Bind ViewModel.IsAddRowVisible, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox
+                Grid.Column="0"
+                PlaceholderText="添加待办后回车"
+                Text="{x:Bind ViewModel.NewTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                KeyDown="OnNewTitleKeyDown" />
+
+            <Button Grid.Column="1" Content="添加" Command="{x:Bind ViewModel.AddCommand}" />
+        </Grid>
+    </Grid>
+</UserControl>
