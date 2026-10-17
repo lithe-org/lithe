@@ -1,6 +1,7 @@
 using System.Globalization;
 using Lithe.Config.Toml;
 using Lithe.Core.Config;
+using Lithe.Core.Diagnostics;
 
 namespace Lithe.Config;
 
@@ -10,6 +11,9 @@ namespace Lithe.Config;
 /// <remarks>
 /// 写入采用「临时文件 + 替换」，避免写盘中途崩溃留下半截配置；
 /// <see cref="Set{T}"/> 只标记脏数据，由 500ms 防抖统一落盘。
+/// 读取带容错：主配置损坏时隔离为 <c>.corrupt-&lt;时间戳&gt;</c>，依次尝试
+/// <c>.bak</c> 备份与默认值，损坏不再拖垮启动；保存成功后 best-effort
+/// 更新 <c>.bak</c>。
 /// </remarks>
 public sealed class TomlConfigService : IConfigService, IDisposable
 {
@@ -120,6 +124,9 @@ public sealed class TomlConfigService : IConfigService, IDisposable
             var temp = _path + ".tmp";
             await File.WriteAllTextAsync(temp, snapshot).ConfigureAwait(false);
             File.Move(temp, _path, overwrite: true);
+
+            // 主配置落盘后同步刷新备份，供损坏恢复使用；失败只记日志。
+            UpdateBackup(snapshot);
         }
         catch
         {
@@ -145,12 +152,106 @@ public sealed class TomlConfigService : IConfigService, IDisposable
         }
 
         var text = await File.ReadAllTextAsync(_path).ConfigureAwait(false);
-        var loaded = TomlSerializer.Parse(text);
 
+        try
+        {
+            var loaded = TomlSerializer.Parse(text);
+
+            lock (_gate)
+            {
+                _root = loaded;
+                _dirty = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            // 配置损坏不能拖垮启动：隔离坏文件 → 尝试备份 → 保留默认。
+            AppLog.Warn($"配置文件解析失败：{_path}", ex);
+            RecoverFromCorruption();
+        }
+    }
+
+    /// <summary>
+    /// 配置损坏后的恢复流程：先把坏文件隔离成 <c>.corrupt-&lt;时间戳&gt;</c>，
+    /// 再尝试解析 <c>.bak</c>；两者都不可用时保留默认值。
+    /// </summary>
+    /// <remarks>
+    /// 从备份或默认恢复时标记脏数据，由下一次保存重建主配置；隔离失败
+    /// （文件被占用等）时保留磁盘现场，不覆盖用户数据，等人工处理。
+    /// </remarks>
+    private void RecoverFromCorruption()
+    {
+        var isolated = TryIsolateCorruptFile();
+
+        var backup = TryParseBackup();
         lock (_gate)
         {
-            _root = loaded;
-            _dirty = false;
+            if (backup is not null)
+            {
+                _root = backup;
+                _dirty = true;
+                AppLog.Warn($"已从备份恢复配置：{_path}.bak");
+                return;
+            }
+
+            AppLog.Warn("配置备份不可用，本次运行使用默认配置");
+            _dirty = isolated;
+        }
+    }
+
+    /// <summary>
+    /// 把损坏的配置重命名为带时间戳的隔离文件，返回是否成功。
+    /// </summary>
+    private bool TryIsolateCorruptFile()
+    {
+        try
+        {
+            var target = $"{_path}.corrupt-{DateTime.Now.ToString("yyyyMMdd-HHmmssfff", CultureInfo.InvariantCulture)}";
+            File.Move(_path, target);
+            AppLog.Warn($"损坏的配置已隔离为 {target}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("损坏配置隔离失败，保留原文件现场", ex);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 尝试解析备份配置，失败返回 <see langword="null"/>。
+    /// </summary>
+    private TomlTable? TryParseBackup()
+    {
+        var backupPath = _path + ".bak";
+        if (!File.Exists(backupPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            return TomlSerializer.Parse(File.ReadAllText(backupPath));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"备份配置解析失败：{backupPath}", ex);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// best-effort 刷新备份配置，失败不影响主流程。
+    /// </summary>
+    private void UpdateBackup(string snapshot)
+    {
+        try
+        {
+            File.WriteAllText(_path + ".bak", snapshot);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"配置备份更新失败：{_path}.bak", ex);
         }
     }
 
