@@ -1,3 +1,5 @@
+using Lithe_App.Shell;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -23,5 +25,20 @@ public sealed partial class MainWindow : Window
 
         // Navigate the root frame to the main page on startup.
         RootFrame.Navigate(typeof(MainPage));
+
+        // 关闭按钮只隐藏窗口，进程保活（桌面组件继续显示）；
+        // 托盘菜单点"退出"时 IsExiting 为真，这里放行。
+        AppWindow.Closing += OnClosing;
+    }
+
+    private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (TrayIcon.IsExiting)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        TrayIcon.HideWindow(this);
     }
 }

@@ -94,6 +94,9 @@ public partial class App : Application
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
 
+        // 托盘跟在窗口后初始化：失败只记日志，不影响启动。
+        _ = TrayIcon.Initialize(Window);
+
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
 
