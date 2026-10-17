@@ -29,7 +29,7 @@ public sealed class WidgetHost : UserControl
     private readonly FrameworkElement _content;
     private readonly Grid _handleHost;
     private readonly Border _resizeHandle;
-    private readonly Border _card;
+    private readonly WidgetCard _card;
     private WidgetPlacement _placement;
     private WidgetSizeClass _sizeClass;
     private double _originLeft;
@@ -82,12 +82,12 @@ public sealed class WidgetHost : UserControl
         root.Children.Add(_content);
         root.Children.Add(_handleHost);
 
-        // 卡片容器：圆角、描边、背景都挂在 Border 上。UserControl 自身没有
-        // 可渲染的边框，早期把 Background/BorderBrush 设在 UserControl 上，
-        // 编辑模式高亮根本不显示，背景也依赖不渲染的 AcrylicBrush。
-        _card = WidgetBackground.CreateContainer(WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
-        _card.Child = root;
-        Content = _card;
+        // 卡片容器：真材质层 + 色调描边层 + 内容层，圆角与描边都由容器负责。
+        // UserControl 自身没有可渲染的边框，早期把 Background/BorderBrush 设在
+        // UserControl 上，编辑模式高亮根本不显示，背景也依赖不渲染的 AcrylicBrush。
+        _card = new WidgetCard(WidgetBackgroundKind.Acrylic, Microsoft.UI.Colors.Black, 0.55);
+        _card.Root.Children.Add(root);
+        Content = _card.Root;
 
         ApplyPlacementGeometry();
         ApplyEditModeState();
@@ -151,7 +151,7 @@ public WidgetSizeClass SizeClass => _sizeClass;
     /// </summary>
     public void SetBackground(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
     {
-        _card.Background = WidgetBackground.Create(kind, color, opacity);
+        _card.Apply(kind, color, opacity);
     }
 
     private Grid BuildContentRoot()
@@ -215,8 +215,8 @@ public WidgetSizeClass SizeClass => _sizeClass;
         _resizeHandle.Visibility = editing ? Visibility.Visible : Visibility.Collapsed;
         Opacity = editing ? 0.75 : 1.0;
 
-        // 描边强调挂在卡片容器上：UserControl 的 BorderBrush 不会渲染。
-        _card.BorderBrush = new SolidColorBrush(Colors.White with { A = editing ? (byte)0xAA : (byte)0x33 });
+        // 描边强调挂在卡片容器的色调层：UserControl 的 BorderBrush 不会渲染。
+        _card.ApplyEditBorder(editing);
     }
 
     private void OnEditModeChanged(object? sender, EventArgs args) => ApplyEditModeState();

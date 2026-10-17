@@ -44,16 +44,16 @@ public static class WidgetBackground
     public const double CornerRadius = 12;
 
     /// <summary>
-    /// 创建背景画刷。
+    /// 创建色调画刷。
     /// </summary>
     /// <param name="kind">背景类型。</param>
     /// <param name="color">纯色或色调。</param>
     /// <param name="opacity">不透明度 0~1。</param>
     /// <remarks>
-    /// 亚克力/云母降级为半透明纯色：桌面层窗口不设 SystemBackdrop（无透明
-    /// backdrop 可用），实测 AcrylicBrush 在这种窗口里渲染为全透明，组件
-    /// 只剩浮字。半透明 SolidColorBrush 靠窗口的逐像素透明合成，确定可见。
-    /// 后续若给窗口加 DesktopAcrylicBackdrop，可改回真亚克力。
+    /// 真材质由 <see cref="WidgetCard"/> 的 <see cref="SystemBackdropElement"/>
+    /// 承担（SDK 2.0+），本方法只画色调/描边之下的纯色层。无 backdrop 的
+    /// 窗口里旧版 AcrylicBrush 渲染为全透明（实测），半透明
+    /// SolidColorBrush 靠窗口逐像素透明合成，确定可见，是不可用环境的兜底。
     /// </remarks>
     public static Brush Create(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
     {
@@ -71,16 +71,24 @@ public static class WidgetBackground
     }
 
     /// <summary>
-    /// 创建带统一圆角与描边的组件容器。
+    /// 尝试创建页内真材质元素（Windows App SDK 2.0+ 的
+    /// <see cref="SystemBackdropElement"/>）。环境不支持时返回
+    /// <see langword="null"/>，调用方回退半透明纯色方案。
     /// </summary>
-    public static Border CreateContainer(WidgetBackgroundKind kind, Color color, double opacity = 0.7)
+    public static SystemBackdropElement? TryCreateMaterial()
     {
-        return new Border
+        try
         {
-            CornerRadius = new CornerRadius(CornerRadius),
-            Background = Create(kind, color, opacity),
-            BorderBrush = new SolidColorBrush(Colors.White with { A = 0x33 }),
-            BorderThickness = new Thickness(1),
-        };
+            // 具体材质（亚克力/云母）由调用方按外观配置赋值 SystemBackdrop。
+            return new SystemBackdropElement
+            {
+                CornerRadius = new CornerRadius(CornerRadius),
+            };
+        }
+        catch (Exception)
+        {
+            // 缺 SDK 2.0 运行时等环境：类型加载或构造失败，走纯色回退。
+            return null;
+        }
     }
 }
