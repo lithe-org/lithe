@@ -71,7 +71,8 @@ public partial class MainPageViewModel : ObservableObject
     /// <summary>
     /// 桌面上的组件列表。
     /// </summary>
-    public IReadOnlyList<string> WidgetIds { get; private set; } = [];
+    [ObservableProperty]
+    public partial IReadOnlyList<string> WidgetIds { get; set; } = [];
 
     /// <summary>
     /// 当前选中的组件。
