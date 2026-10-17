@@ -16,6 +16,12 @@ namespace Lithe.Widgets;
 /// </summary>
 public sealed class WidgetHost : UserControl
 {
+    /// <summary>
+    /// 缩放应用的最小间隔（毫秒）。拖拽中连续 PointerMoved 会触发整条
+    /// 布局链路，限频后每次拖动最多每秒十几次布局变更。
+    /// </summary>
+    private const long ResizeApplyIntervalMs = 60;
+
     private readonly ILayoutEngine _layout;
     private readonly IEditModeService? _editMode;
     private readonly WidgetSizeConstraint _constraint;
@@ -25,6 +31,18 @@ public sealed class WidgetHost : UserControl
     private readonly Border _resizeHandle;
     private WidgetPlacement _placement;
     private WidgetSizeClass _sizeClass;
+    private double _originLeft;
+    private double _originTop;
+
+    // 编辑模式手势状态。处理器在构造时注册一次，用状态区分手势，
+    // 避免每次按下都重复订阅 PointerMoved 导致事件风暴。
+    private bool _isDragging;
+    private bool _isResizing;
+    private GridCell _gestureStartCell;
+    private Point _gestureStartScreen;
+    private double _dragOffsetX;
+    private double _dragOffsetY;
+    private long _lastResizeApplyTick;
 
     /// <summary>
     /// 创建组件宿主。
@@ -74,6 +92,13 @@ public sealed class WidgetHost : UserControl
         {
             editMode.EditModeChanged += OnEditModeChanged;
         }
+
+        // 编辑模式：整块可拖拽移动，右下角把手缩放。非编辑模式不拦截，
+        // 组件内部交互（打卡、添加待办）照常工作。
+        PointerPressed += OnWidgetPointerPressed;
+        PointerMoved += OnWidgetPointerMoved;
+        PointerReleased += OnWidgetPointerReleased;
+        PointerCaptureLost += OnPointerCaptureLost;
     }
 
     /// <summary>
@@ -89,7 +114,22 @@ public sealed class WidgetHost : UserControl
     /// <summary>
     /// 当前断点。
     /// </summary>
-    public WidgetSizeClass SizeClass => _sizeClass;
+public WidgetSizeClass SizeClass => _sizeClass;
+
+    /// <summary>
+    /// 组件在工作区坐标系里的像素矩形，用于命中测试。
+    /// </summary>
+    public PixelRect PixelBounds => ToPixels(_placement.Cell);
+
+    /// <summary>
+    /// 设置承载窗口的原点。桌面层只覆盖组件包围盒，布局坐标需要减去这个原点。
+    /// </summary>
+    public void SetOrigin(double left, double top)
+    {
+        _originLeft = left;
+        _originTop = top;
+        ApplyPlacementGeometry();
+    }
 
     /// <summary>
     /// 显示器网格变化时重新定位。
@@ -133,6 +173,9 @@ public sealed class WidgetHost : UserControl
         };
 
         handle.PointerPressed += OnResizeHandlePressed;
+        handle.PointerMoved += OnResizeHandleMoved;
+        handle.PointerReleased += OnResizeHandleReleased;
+        handle.PointerCaptureLost += OnPointerCaptureLost;
         return handle;
     }
 
@@ -142,8 +185,10 @@ public sealed class WidgetHost : UserControl
 
         Width = rect.Width;
         Height = rect.Height;
-        Canvas.SetLeft(this, rect.Left);
-        Canvas.SetTop(this, rect.Top);
+
+        // 拖拽中带上像素偏移，组件跟着光标走，松手才吸附回网格。
+        Canvas.SetLeft(this, rect.Left - _originLeft + _dragOffsetX);
+        Canvas.SetTop(this, rect.Top - _originTop + _dragOffsetY);
     }
 
     private Lithe.Core.Layout.PixelRect ToPixels(GridCell cell)
@@ -196,51 +241,167 @@ public sealed class WidgetHost : UserControl
             : WidgetSizeClass.Regular;
     }
 
+    private void OnWidgetPointerPressed(object sender, PointerRoutedEventArgs args)
+    {
+        if (_editMode?.IsEditing != true || _isDragging || _isResizing)
+        {
+            return;
+        }
+
+        // 编辑模式下组件内部不接收事件，整块就是一个可拖拽实体。
+        args.Handled = true;
+        CapturePointer(args.Pointer);
+
+        _isDragging = true;
+        _gestureStartCell = _placement.Cell;
+        _gestureStartScreen = GetCursorScreenPoint();
+        _dragOffsetX = 0;
+        _dragOffsetY = 0;
+    }
+
+    private void OnWidgetPointerMoved(object sender, PointerRoutedEventArgs args)
+    {
+        if (!_isDragging)
+        {
+            return;
+        }
+
+        // 屏幕坐标做基准：窗口在编辑模式下铺满工作区不再移动，只有组件自身
+        // 在动，局部坐标会随组件位置漂移，屏幕坐标才不会自激。
+        var current = GetCursorScreenPoint();
+        _dragOffsetX = current.X - _gestureStartScreen.X;
+        _dragOffsetY = current.Y - _gestureStartScreen.Y;
+        ApplyPlacementGeometry();
+    }
+
+    private void OnWidgetPointerReleased(object sender, PointerRoutedEventArgs args)
+    {
+        if (!_isDragging)
+        {
+            return;
+        }
+
+        _isDragging = false;
+        ReleasePointerCapture(args.Pointer);
+
+        var metrics = _layout.Metrics;
+        var stepX = metrics.CellWidth + metrics.Spacing;
+        var stepY = metrics.CellHeight + metrics.Spacing;
+
+        var column = _gestureStartCell.Column + (int)Math.Round(_dragOffsetX / stepX);
+        var row = _gestureStartCell.Row + (int)Math.Round(_dragOffsetY / stepY);
+        column = Math.Clamp(column, 0, Math.Max(0, metrics.Columns - _gestureStartCell.ColSpan));
+        row = Math.Clamp(row, 0, Math.Max(0, metrics.Rows - _gestureStartCell.RowSpan));
+
+        _dragOffsetX = 0;
+        _dragOffsetY = 0;
+
+        var target = _gestureStartCell with { Column = column, Row = row };
+        if (target == _placement.Cell || !_layout.Place(_placement.WidgetId, target))
+        {
+            // 原地放下或目标被占，回弹到当前网格位置。
+            ApplyPlacementGeometry();
+        }
+    }
+
     private void OnResizeHandlePressed(object sender, PointerRoutedEventArgs args)
     {
-        if (_editMode?.IsEditing != true)
+        if (_editMode?.IsEditing != true || _isDragging || _isResizing)
         {
             return;
         }
 
         args.Handled = true;
-        var point = args.GetCurrentPoint(this).Position;
         var handle = (UIElement)sender;
         handle.CapturePointer(args.Pointer);
 
-        var startCell = _placement.Cell;
-        var startPoint = point;
+        _isResizing = true;
+        _gestureStartCell = _placement.Cell;
+        _gestureStartScreen = GetCursorScreenPoint();
+        _lastResizeApplyTick = Environment.TickCount64;
+    }
 
-        var move = new PointerEventHandler((s, e) =>
+    private void OnResizeHandleMoved(object sender, PointerRoutedEventArgs args)
+    {
+        if (!_isResizing)
         {
-            var current = e.GetCurrentPoint(this).Position;
-            var deltaX = current.X - startPoint.X;
-            var deltaY = current.Y - startPoint.Y;
+            return;
+        }
 
-            var colSpan = startCell.ColSpan + (int)Math.Round(deltaX / (_metrics.CellWidth + _metrics.Spacing));
-            var rowSpan = startCell.RowSpan + (int)Math.Round(deltaY / (_metrics.CellHeight + _metrics.Spacing));
-
-            var (col, row) = _constraint.Clamp(colSpan, rowSpan);
-            var target = startCell with { ColSpan = col, RowSpan = row };
-
-            if (_layout.CanPlace(new WidgetPlacement(_placement.WidgetId, startCell), target))
-            {
-                var resized = _layout.Resize(_placement.WidgetId, col, row);
-                _placement = resized;
-                ApplyPlacementGeometry();
-            }
-        });
-
-        PointerEventHandler up = default!;
-        up = (s, e) =>
+        // 限频：PointerMoved 可以远快于鼠标回报率，每次都跑整条布局链路
+        // 会把界面卡死，这里最多每 60ms 应用一次。
+        var now = Environment.TickCount64;
+        if (now - _lastResizeApplyTick < ResizeApplyIntervalMs)
         {
-            handle.ReleasePointerCapture(e.Pointer);
-            handle.PointerMoved -= move;
-            handle.PointerReleased -= up;
-        };
+            return;
+        }
 
-        handle.PointerMoved += move;
-        handle.PointerReleased += up;
+        _lastResizeApplyTick = now;
+        ApplyResizeFromCursor();
+    }
+
+    private void OnResizeHandleReleased(object sender, PointerRoutedEventArgs args)
+    {
+        if (!_isResizing)
+        {
+            return;
+        }
+
+        _isResizing = false;
+        ((UIElement)sender).ReleasePointerCapture(args.Pointer);
+
+        // 节流跳过的中间跨度直接补上终态。
+        ApplyResizeFromCursor();
+    }
+
+    private void OnPointerCaptureLost(object sender, PointerRoutedEventArgs args)
+    {
+        // 捕获丢失（切窗口、Alt+Tab）时清掉手势状态，避免组件粘在光标上。
+        if (_isDragging)
+        {
+            _isDragging = false;
+            _dragOffsetX = 0;
+            _dragOffsetY = 0;
+            ApplyPlacementGeometry();
+        }
+
+        _isResizing = false;
+    }
+
+    /// <summary>
+    /// 按光标相对按下点的位移计算目标跨度并应用。屏幕坐标基准，
+    /// 组件自身缩放不会让坐标自激；放不下的跨度直接跳过。
+    /// </summary>
+    private void ApplyResizeFromCursor()
+    {
+        var current = GetCursorScreenPoint();
+        var metrics = _layout.Metrics;
+        var stepX = metrics.CellWidth + metrics.Spacing;
+        var stepY = metrics.CellHeight + metrics.Spacing;
+
+        var colSpan = _gestureStartCell.ColSpan + (int)Math.Round((current.X - _gestureStartScreen.X) / stepX);
+        var rowSpan = _gestureStartCell.RowSpan + (int)Math.Round((current.Y - _gestureStartScreen.Y) / stepY);
+        var (col, row) = _constraint.Clamp(colSpan, rowSpan);
+
+        if (col == _placement.Cell.ColSpan && row == _placement.Cell.RowSpan)
+        {
+            return;
+        }
+
+        var target = _gestureStartCell with { ColSpan = col, RowSpan = row };
+        if (!_layout.CanPlace(new WidgetPlacement(_placement.WidgetId, _gestureStartCell), target))
+        {
+            return;
+        }
+
+        _placement = _layout.Resize(_placement.WidgetId, col, row);
+        ApplyPlacementGeometry();
+    }
+
+    private static Point GetCursorScreenPoint()
+    {
+        NativeMethods.GetCursorPos(out var point);
+        return point;
     }
 
     /// <summary>
