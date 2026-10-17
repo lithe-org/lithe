@@ -11,19 +11,14 @@ namespace Lithe.Widgets;
 /// 组件卡片容器：圆角色调层 + 内容槽。
 /// </summary>
 /// <remarks>
-/// 真材质由桌面层窗口的 <c>DesktopAcrylicBackdrop</c> 统一提供：WinUI 3 的
-/// lifted Composition 无法直接采样桌面，页内 <c>SystemBackdropElement</c> 在
-/// 逐像素透明 + owner 挂载窗口里实测只渲染系统 fallback 纯色（2026-10-17），
-/// 故材质挂窗口、卡片用半透明色调压深。编辑模式描边强调挂色调层。
+/// 无窗口级材质：卡片色调按配置原值绘制，半透明纯色靠窗口逐像素透明
+/// 合成，确定可见；组件之外的窗口空白区域透出壁纸。窗口级 acrylic 与
+/// "空隙透出壁纸"的设计冲突（组件拖开后盒内空隙被填充成 acrylic 亮块，
+/// 2026-10-17 截图实测），页内 SystemBackdropElement 在同形态窗口采不到
+/// 壁纸；真亚克力待每组件独立窗口架构（M3）。编辑模式描边强调挂色调层。
 /// </remarks>
 public sealed class WidgetCard
 {
-    /// <summary>
-    /// 亚克力/云母卡片在窗口材质上的色调 alpha 上限：封顶压深，
-    /// 避免高不透明度把窗口材质的磨砂感糊死。
-    /// </summary>
-    private const double MaterialTintCap = 0.6;
-
     private readonly string _widgetId;
     private readonly Border _tint;
 
@@ -58,24 +53,18 @@ public sealed class WidgetCard
     public Grid Root { get; }
 
     /// <summary>
-    /// 应用外观：计算色调 alpha 并刷新背景画刷。
+    /// 应用外观：按配置刷新色调画刷。
     /// </summary>
     public void Apply(WidgetBackgroundKind kind, Color color, double opacity)
     {
-        // 亚克力/云母的真实感来自窗口级材质，卡片色调只做压深，封顶处理；
-        // 纯色/透明按配置原值绘制。
-        var effective = kind is WidgetBackgroundKind.Acrylic or WidgetBackgroundKind.Mica
-            ? Math.Min(opacity, MaterialTintCap)
-            : opacity;
+        _tint.Background = WidgetBackground.Create(kind, color, opacity);
 
-        _tint.Background = WidgetBackground.Create(kind, color, effective);
-
-        // 渲染级日志：配置值经封顶后的实际落地值，用于排查样式问题。
+        // 渲染级日志：配置值与实际落地色值，排查样式问题直接看 shell.log。
         var brush = (SolidColorBrush)_tint.Background;
         var applied = brush.Color;
         AppLog.Info(
             $"卡片 {_widgetId} 外观：{kind} #{color.R:X2}{color.G:X2}{color.B:X2} {opacity:P0}" +
-            $" → 色调 #{applied.R:X2}{applied.G:X2}{applied.B:X2} alpha {applied.A}（{effective:P0}）");
+            $" → 色调 #{applied.R:X2}{applied.G:X2}{applied.B:X2} alpha {applied.A}");
     }
 
     /// <summary>

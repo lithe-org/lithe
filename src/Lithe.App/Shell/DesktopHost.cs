@@ -2,7 +2,6 @@ using Lithe.Core.Layout;
 using Lithe_App.Diagnostics;
 using Lithe_App.Interop;
 using Lithe.Widgets;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -66,34 +65,26 @@ public sealed partial class DesktopHost
             Title = "Lithe 桌面层",
         };
 
-        // 窗口级桌面亚克力：WinUI 3 的 lifted Composition 采不到桌面壁纸，
-        // 真材质必须挂窗口级 SystemBackdrop，走系统 DWM 三方协同。页内
-        // SystemBackdropElement 在逐像素透明 + owner 挂载窗口里实测只渲染
-        // 系统 fallback 纯色（2026-10-17），故材质统一挂窗口，卡片用半透明
-        // 色调压深。设置失败只记日志，退化为纯色卡片，不影响启动。
-        try
+        // 不设 SystemBackdrop：窗口走逐像素透明，未覆盖区域透出壁纸；组件
+        // 背景由卡片自己的半透明色调层绘制。窗口级 acrylic 曾实测但不符合
+        // 设计：窗口覆盖组件包围盒，组件被拖开后盒内大片空隙全被 acrylic
+        // 填充成亮块（2026-10-17 截图实测），与"空隙透出壁纸"直接冲突；
+        // 真亚克力需要每组件独立窗口架构（DeskBox 形态），列入 M3。
+        _window = new Window
         {
-            _window.SystemBackdrop = new DesktopAcrylicBackdrop();
-            ShellDiagnostics.Write($"窗口级亚克力材质已启用：{_window.SystemBackdrop.GetType().Name}");
-        }
-        catch (Exception ex)
-        {
-            ShellDiagnostics.Write($"窗口亚克力材质设置失败：{ex.Message}");
-        }
+            Title = "Lithe 桌面层",
+        };
 
         _widgetSurface = new Canvas();
         var root = new Grid();
 
-        // acrylic 的默认 tint 跟随明暗主题：浅色主题下透出亮壁纸，卡片发亮
-        // 且随壁纸明暗变色（2026-10-17 截图实测）。桌面层固定深色主题，
-        // 让 acrylic 走深色 base，卡片色调再压深，得到统一的深色磨砂。
+        // 深色主题让组件内控件（待办勾选框/输入框/按钮）走深色样式，
+        // 与深色卡片协调；主窗口不受影响。
         root.RequestedTheme = ElementTheme.Dark;
         root.Background = CreateWindowBackground();
         root.Children.Add(_widgetSurface);
         root.Loaded += OnRootLoaded;
         _window.Content = root;
-
-        ShellDiagnostics.Write($"桌面层内容根主题：{root.RequestedTheme}");
 
         // 编辑模式下点空白处退出，避免误入编辑模式后整屏都点不到别的窗口。
         root.PointerPressed += OnRootPointerPressed;
@@ -344,8 +335,11 @@ public sealed partial class DesktopHost
     /// <summary>
     /// 当前状态描述。
     /// </summary>
-    public string DescribeState() =>
-        $"桌面层 0x{_hwnd:X}，组件 {_hosts.Count} 个，网格 {_layout.Metrics.Columns}x{_layout.Metrics.Rows}，穿透 {(ClickThrough ? "开" : "关")}，{AttachState}";
+    public string DescribeState()
+    {
+        var ids = string.Join("、", _hosts.Keys);
+        return $"组件 {_hosts.Count} 个（{ids}）· 网格 {_layout.Metrics.Columns}×{_layout.Metrics.Rows} · {AttachState}";
+    }
 
     private void ApplyAppearanceCore(string widgetId) => ApplyAppearance(widgetId);
 
@@ -505,9 +499,9 @@ public sealed partial class DesktopHost
     }
 
     /// <summary>
-    /// 窗口内容根背景。显式透明画刷让内容区透出窗口级 acrylic 材质
-    /// （不设则是默认白底，会把材质完全盖住）；未覆盖区域由组件卡片
-    /// 自己的色调层负责。
+    /// 窗口内容根背景。显式透明画刷：不设则是默认白底会盖住壁纸；
+    /// 设透明后窗口走逐像素合成，未覆盖区域（含组件被拖开后包围盒
+    /// 内的空隙）透出壁纸，组件区域由卡片自己的色调层负责。
     /// </summary>
     private static Brush CreateWindowBackground() =>
         new SolidColorBrush(Microsoft.UI.Colors.Transparent);
