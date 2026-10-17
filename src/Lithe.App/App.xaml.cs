@@ -1,3 +1,4 @@
+using Lithe.Config;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -37,6 +38,11 @@ public partial class App : Application
         WinRT.Interop.WindowNative.GetWindowHandle(Window);
 
     /// <summary>
+    /// 应用级配置服务。所有模块通过它读写配置，不要各自建实例。
+    /// </summary>
+    public static TomlConfigService Configuration { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -51,6 +57,8 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         Diagnostics.StartupSelfCheck.Run();
+
+        Configuration = Bootstrap.AppBootstrap.InitializeConfig();
 
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
