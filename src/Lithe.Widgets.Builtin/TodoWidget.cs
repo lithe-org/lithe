@@ -40,7 +40,7 @@ public sealed class TodoWidget : IWidgetFactory
 
         public string DisplayName => "待办";
 
-        public WidgetSizeConstraint SizeConstraint { get; } = new(DefaultColSpan: 2, DefaultRowSpan: 3, MinColSpan: 2, MinRowSpan: 2, MaxColSpan: 4, MaxRowSpan: 6);
+        public WidgetSizeConstraint SizeConstraint { get; } = new(DefaultColSpan: 4, DefaultRowSpan: 4, MinColSpan: 2, MinRowSpan: 2, MaxColSpan: 4, MaxRowSpan: 6);
 
         public IReadOnlyList<string> DataSourceIds { get; } = [Lithe.Data.Todo.TodoDataSource.SourceId];
     }

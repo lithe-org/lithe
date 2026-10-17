@@ -555,19 +555,33 @@ public sealed partial class DesktopHost
         var colSpan = Math.Clamp(constraint.DefaultColSpan, 1, metrics.Columns);
         var rowSpan = Math.Clamp(constraint.DefaultRowSpan, 1, metrics.Rows);
 
+        // 组件落屏幕中上方：按"离网格中心列的距离"挑最近空位，行从上往下。
+        // 首个组件直接居中；后续组件从中心向两侧展开，不再永远堆在左上角。
+        var centerColumn = (metrics.Columns - colSpan) / 2.0;
+        GridCell? best = null;
+        var bestScore = double.MaxValue;
+
         for (var row = 0; row <= metrics.Rows - rowSpan; row++)
         {
             for (var column = 0; column <= metrics.Columns - colSpan; column++)
             {
                 var cell = new GridCell(column, row, colSpan, rowSpan);
-                if (_layout.CanPlace(new WidgetPlacement(string.Empty, cell), cell))
+                if (!_layout.CanPlace(new WidgetPlacement(string.Empty, cell), cell))
                 {
-                    return cell;
+                    continue;
+                }
+
+                // 行权重远小于列距：同行内先比列距，行从上往下。
+                var score = Math.Abs(column - centerColumn) + (row * 0.001);
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = cell;
                 }
             }
         }
 
-        return null;
+        return best;
     }
 
     private static nint SubclassCallback(nint hWnd, uint msg, nint wParam, nint lParam, nint uIdSubclass, nint dwRefData)

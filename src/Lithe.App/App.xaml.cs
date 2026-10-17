@@ -140,6 +140,8 @@ public partial class App : Application
 
         if (Layout.GetAllPlacements().Count == 0)
         {
+            // 先放时钟后放待办：居中放置下第二个组件落在第一个正下方，
+            // 视觉上是时钟在上、待办在下的居中一列。
             desktop.AddWidget(Lithe.Widgets.Builtin.ClockWidget.WidgetId);
             desktop.AddWidget(Lithe.Widgets.Builtin.TodoWidget.WidgetId);
             return;

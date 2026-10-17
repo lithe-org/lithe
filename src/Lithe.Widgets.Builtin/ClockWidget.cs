@@ -39,7 +39,7 @@ public sealed class ClockWidget : IWidgetFactory
 
         public string DisplayName => "时钟";
 
-        public WidgetSizeConstraint SizeConstraint { get; } = new(DefaultColSpan: 2, DefaultRowSpan: 1, MinColSpan: 1, MinRowSpan: 1, MaxColSpan: 4, MaxRowSpan: 2);
+        public WidgetSizeConstraint SizeConstraint { get; } = new(DefaultColSpan: 4, DefaultRowSpan: 2, MinColSpan: 1, MinRowSpan: 1, MaxColSpan: 4, MaxRowSpan: 2);
 
         public IReadOnlyList<string> DataSourceIds { get; } = [Lithe.Data.Clock.ClockDataSource.SourceId];
     }
