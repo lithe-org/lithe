@@ -51,7 +51,7 @@ public sealed class ClockWidget : IWidgetFactory
 public sealed partial class ClockWidgetViewModel : ObservableObject, IDisposable, IWidgetViewAware
 {
     private const double CompactFontSize = 22;
-    private const double RegularFontSize = 30;
+    private const double RegularFontSize = 36;
     private const double ExpandedFontSize = 44;
 
     private readonly WidgetContext _context;
@@ -132,7 +132,7 @@ public sealed partial class ClockWidgetViewModel : ObservableObject, IDisposable
 
         ShowDate = sizeClass >= WidgetSizeClass.Regular && _context.GetSetting(ClockWidget.WidgetId, "show_date", true);
         ShowSeconds = sizeClass == WidgetSizeClass.Expanded && _context.GetSetting(ClockWidget.WidgetId, "show_seconds", false);
-        ShowWeekday = sizeClass == WidgetSizeClass.Expanded && _context.GetSetting(ClockWidget.WidgetId, "show_weekday", false);
+        ShowWeekday = sizeClass >= WidgetSizeClass.Regular && _context.GetSetting(ClockWidget.WidgetId, "show_weekday", false);
 
         ApplyFontSize();
         OnPropertyChanged(nameof(ShowSeconds));

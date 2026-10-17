@@ -168,7 +168,10 @@ public sealed partial class TodoWidgetViewModel : ObservableObject, IDisposable,
         _sizeClass = sizeClass;
 
         IsSummaryVisible = sizeClass == WidgetSizeClass.Compact;
-        IsAddRowVisible = sizeClass == WidgetSizeClass.Expanded;
+
+        // 输入行 Regular 起显示：待办 Max 只有 4 列（<420px），按 Expanded
+        // 判断永远不显示，用户将无法添加待办（2026-10-17 截图实测）。
+        IsAddRowVisible = sizeClass >= WidgetSizeClass.Regular;
 
         if (_todos is not null)
         {

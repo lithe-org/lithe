@@ -81,8 +81,12 @@ public sealed class WidgetCard
     /// <summary>
     /// 编辑模式描边强调，挂在色调层。
     /// </summary>
+    /// <remarks>
+    /// 非编辑态描边 alpha 压到 0x18：20% 以上的白边在深色磨砂卡片上
+    /// 过亮，半透明圆角边缘还会合成出亮线（2026-10-17 截图实测）。
+    /// </remarks>
     public void ApplyEditBorder(bool editing)
     {
-        _tint.BorderBrush = new SolidColorBrush(Colors.White with { A = editing ? (byte)0xAA : (byte)0x33 });
+        _tint.BorderBrush = new SolidColorBrush(Colors.White with { A = editing ? (byte)0xAA : (byte)0x18 });
     }
 }
