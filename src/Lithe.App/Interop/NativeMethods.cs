@@ -9,6 +9,7 @@ internal static partial class NativeMethods
 {
     internal const int GWL_EXSTYLE = -20;
     internal const int GWL_STYLE = -16;
+    internal const int GWLP_HWNDPARENT = -8;
 
     internal const int WS_EX_TRANSPARENT = 0x00000020;
     internal const int WS_EX_TOOLWINDOW = 0x00000080;
@@ -16,6 +17,11 @@ internal static partial class NativeMethods
     internal const int WS_EX_LAYERED = 0x00080000;
     internal const int WS_CHILD = 0x40000000;
     internal const int WS_POPUP = unchecked((int)0x80000000);
+
+    /// <summary>
+    /// Z 序置底插入点（hwndInsertAfter）。
+    /// </summary>
+    internal static readonly nint HWND_BOTTOM = new(1);
 
     internal const int HTTRANSPARENT = -1;
     internal const int HTCLIENT = 1;

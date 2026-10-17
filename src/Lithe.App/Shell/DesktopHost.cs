@@ -13,8 +13,9 @@ using Windows.UI;
 namespace Lithe_App.Shell;
 
 /// <summary>
-/// 桌面层窗口：承载桌面小组件。默认挂到 <c>Progman</c>，组件位于所有窗口
-/// 下方、壁纸上方；挂载失败时降级为覆盖工作区的透明置顶窗口。
+/// 桌面层窗口：承载桌面小组件。默认以 owner 方式挂到桌面宿主
+/// （<c>SHELLDLL_DefView</c>），组件位于所有窗口下方、桌面图标上方；
+/// 挂载失败时降级为覆盖工作区的透明置顶窗口。
 /// </summary>
 /// <remarks>
 /// 窗口本身不抢焦点，不显示在任务栏；鼠标落在组件之外时整窗穿透，
@@ -126,7 +127,7 @@ public sealed partial class DesktopHost
     }
 
     /// <summary>
-    /// 把桌面层挂到桌面宿主窗口，使其位于桌面图标所在层。
+    /// 把桌面层挂到桌面宿主窗口（owner 方案），使其位于桌面图标所在层。
     /// </summary>
     /// <remarks>
     /// 向 Explorer 发消息是同步的，会阻塞调用线程，所以查找放到后台线程，
@@ -144,11 +145,22 @@ public sealed partial class DesktopHost
             return AttachState;
         }
 
-        var attached = DesktopLayerHost.Attach(_hwnd, host);
+        bool attached;
+        try
+        {
+            attached = DesktopLayerHost.Attach(_hwnd, host);
+        }
+        catch (Exception ex)
+        {
+            // 挂载是增强项：任何异常都不能拖垮进程，保持顶层窗口即可。
+            ShellDiagnostics.Write($"挂载桌面宿主 0x{host:X} 异常：{ex.Message}");
+            attached = false;
+        }
+
         if (attached)
         {
-            // 挂载后窗口是 Progman 的子窗口，置顶标记只对顶层窗口有意义。
-            // 显式关掉，保证"在所有窗口下方"在任何路径下都成立。
+            // 挂到桌面宿主 owner 下后关掉置顶：窗口作为 owner 附属始终位于
+            // 宿主（桌面图标层）之上、其他窗口之下。
             SetAlwaysOnTop(false);
             AttachState = $"已挂载到桌面宿主 0x{host:X}";
         }
@@ -166,10 +178,7 @@ public sealed partial class DesktopHost
     /// </summary>
     public string DetachFromDesktopLayer()
     {
-        NativeMethods.SetParent(_hwnd, 0);
-
-        var style = NativeMethods.GetStyle(_hwnd);
-        NativeMethods.SetStyle(_hwnd, (style & ~NativeMethods.WS_CHILD) | NativeMethods.WS_POPUP);
+        DesktopLayerHost.Detach(_hwnd);
 
         // 摘回顶层后恢复组件包围盒：铺满工作区会留下全屏置顶窗口挡住桌面。
         UpdateWindowBounds();
