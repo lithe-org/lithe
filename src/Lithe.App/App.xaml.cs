@@ -1,5 +1,6 @@
 using Lithe.Config;
 using Lithe_App.Shell;
+using Lithe.Data;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -49,6 +50,11 @@ public partial class App : Application
     public static DesktopHost? DesktopLayer { get; private set; }
 
     /// <summary>
+    /// 数据源注册表。所有模块通过它取数据源，不要自行 new。
+    /// </summary>
+    public static DataSourceRegistry DataSources { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -62,7 +68,10 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        Diagnostics.ShellDiagnostics.Install();
+
         Configuration = Bootstrap.AppBootstrap.InitializeConfig();
+        DataSources = Bootstrap.AppBootstrap.InitializeDataSources();
 
         Diagnostics.StartupSelfCheck.Run();
 

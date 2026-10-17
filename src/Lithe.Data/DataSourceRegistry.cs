@@ -1,4 +1,6 @@
-namespace Lithe.Core.Data;
+using Lithe.Core.Data;
+
+namespace Lithe.Data;
 
 /// <summary>
 /// 数据源注册表。所有 <see cref="IDataSource{T}"/> 必须注册到这里，由注册表统一管理启停。

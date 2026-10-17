@@ -3,5 +3,6 @@
     <Project Path="src/Lithe.App/Lithe.App.csproj" />
     <Project Path="src/Lithe.Config/Lithe.Config.csproj" />
     <Project Path="src/Lithe.Core/Lithe.Core.csproj" />
+    <Project Path="src/Lithe.Data/Lithe.Data.csproj" />
   </Folder>
 </Solution>

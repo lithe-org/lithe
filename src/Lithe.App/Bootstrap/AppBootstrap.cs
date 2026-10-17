@@ -1,4 +1,8 @@
 using Lithe.Config;
+using Lithe.Core.Diagnostics;
+using Lithe.Data;
+using Lithe.Data.Clock;
+using Lithe.Data.Todo;
 
 namespace Lithe_App.Bootstrap;
 
@@ -23,6 +27,27 @@ internal static class AppBootstrap
         EnsureLayoutFile();
 
         return config;
+    }
+
+    /// <summary>
+    /// 注册并启动全部数据源。
+    /// </summary>
+    public static DataSourceRegistry InitializeDataSources()
+    {
+        var registry = new DataSourceRegistry();
+        registry.Register(new ClockDataSource());
+        registry.Register(new TodoDataSource(ConfigPaths.TodosFile));
+
+        // 启动阶段无 UI 依赖，同步等待即可；单个数据源失败由注册表兜底。
+        var failures = registry.StartAllAsync().GetAwaiter().GetResult();
+        foreach (var failure in failures)
+        {
+            AppLog.Warn($"数据源 {failure.Id} 启动失败", failure.Error);
+        }
+
+        AppLog.Info($"已启动数据源：{string.Join(", ", registry.RegisteredIds)}");
+
+        return registry;
     }
 
     private static void EnsureLayoutFile()

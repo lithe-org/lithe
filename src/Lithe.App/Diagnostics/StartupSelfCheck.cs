@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using Lithe.Core.Data;
 using Lithe.Core.Events;
+using Lithe.Data;
+using Lithe.Data.Clock;
+using Lithe.Data.Todo;
 
 namespace Lithe_App.Diagnostics;
 
@@ -14,6 +17,7 @@ internal static class StartupSelfCheck
     {
         EventBusSelfCheck();
         DataSourceRegistrySelfCheck();
+        RealDataSourceSelfCheck();
     }
 
     private static void EventBusSelfCheck()
@@ -78,6 +82,39 @@ internal static class StartupSelfCheck
 
         registry.StopAllAsync().GetAwaiter().GetResult();
         ShellDiagnostics.Write($"[自检] 数据源停止完成，运行中 {registry.IsRunning(SelfCheckDataSource.SourceId)}（期望 False）");
+    }
+
+    /// <summary>
+    /// 真实数据源只做只读断言，避免启动自检往用户的待办文件里写测试数据。
+    /// </summary>
+    private static void RealDataSourceSelfCheck()
+    {
+        var registry = App.DataSources;
+        if (registry is null)
+        {
+            return;
+        }
+
+        if (registry.TryGet<ClockSnapshot>(ClockDataSource.SourceId, out var clock))
+        {
+            var first = clock.CurrentValue;
+            Thread.Sleep(1100);
+            ShellDiagnostics.Write(
+                $"[自检] 时钟数据源推送 {(clock.CurrentValue.Now - first.Now).TotalSeconds:F1}s，格式化 {ClockDataSource.FormatTime(clock.CurrentValue.Now, true, true)} / {ClockDataSource.FormatDate(first.Now, true)}");
+        }
+        else
+        {
+            ShellDiagnostics.Write("[自检] 取时钟数据源失败");
+        }
+
+        if (registry.TryGet<IReadOnlyList<TodoItem>>(TodoDataSource.SourceId, out var todos))
+        {
+            ShellDiagnostics.Write($"[自检] 待办数据源可用，当前 {todos.CurrentValue.Count} 条");
+        }
+        else
+        {
+            ShellDiagnostics.Write("[自检] 取待办数据源失败");
+        }
     }
 
     private sealed class Probe
