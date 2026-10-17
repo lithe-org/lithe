@@ -100,7 +100,7 @@ public partial class App : Application
         (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
         Widgets = Bootstrap.AppBootstrap.InitializeWidgets();
 
-        if (IsDesktopLayerEnabled())
+        if (DesktopLayerPolicy.IsEnabled(Configuration, ConfigPaths.RootDirectory))
         {
             DesktopLayer = new DesktopHost(
                 Bootstrap.AppBootstrap.CreateWidgetContext(),
@@ -113,7 +113,7 @@ public partial class App : Application
 
             // 桌面层挂载开关：默认挂到 Progman（组件在所有窗口下方、桌面上方）；
             // 找不到宿主或挂载失败时保持顶层置顶窗口，日志见 ShellDiagnostics。
-            if (ShouldAttachDesktopLayer())
+            if (DesktopLayerPolicy.ShouldAttach(Configuration, ConfigPaths.RootDirectory))
             {
                 _ = DesktopLayer.AttachToDesktopLayerAsync();
             }
@@ -126,17 +126,6 @@ public partial class App : Application
         // 自检里有等待，放后台跑，不拖慢启动。
         _ = Task.Run(Diagnostics.StartupSelfCheck.Run);
     }
-
-    /// <summary>
-    /// 桌面层可用配置项关闭，标记文件用于出问题时快速自救。
-    /// </summary>
-    private static bool IsDesktopLayerEnabled() =>
-        Configuration.GetOrDefault("desktop_layer.enabled", true)
-        && !File.Exists(Path.Combine(ConfigPaths.RootDirectory, "disable-desktop-layer.flag"));
-
-    private static bool ShouldAttachDesktopLayer() =>
-        Configuration.GetOrDefault("desktop_layer.attach_to_desktop_host", true)
-        || File.Exists(Path.Combine(ConfigPaths.RootDirectory, "attach-desktop-layer.flag"));
 
     /// <summary>
     /// 首次启动桌面为空时放时钟与待办，方便验收；用户可以在桌面编辑模式里删掉。
