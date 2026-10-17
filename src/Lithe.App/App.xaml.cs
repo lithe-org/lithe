@@ -1,6 +1,7 @@
 using Lithe.Config;
 using Lithe_App.Shell;
 using Lithe.Data;
+using Lithe.Layout;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Data;
@@ -55,6 +56,16 @@ public partial class App : Application
     public static DataSourceRegistry DataSources { get; private set; } = null!;
 
     /// <summary>
+    /// 桌面组件布局引擎。
+    /// </summary>
+    public static LayoutEngine Layout { get; private set; } = null!;
+
+    /// <summary>
+    /// 桌面编辑模式。
+    /// </summary>
+    public static EditModeService EditMode { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes the singleton application object.
     /// </summary>
     public App()
@@ -87,6 +98,8 @@ if (ShouldAttachWorkerW())
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         Window.Activate();
+
+        (Layout, EditMode) = Bootstrap.AppBootstrap.InitializeLayout();
     }
 
     private static bool ShouldAttachWorkerW() =>

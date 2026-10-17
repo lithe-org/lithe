@@ -1,8 +1,14 @@
 using Lithe.Config;
+using Lithe.Config.Toml;
 using Lithe.Core.Diagnostics;
+using Lithe.Core.Layout;
 using Lithe.Data;
 using Lithe.Data.Clock;
 using Lithe.Data.Todo;
+using Lithe.Layout;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using WinRT.Interop;
 
 namespace Lithe_App.Bootstrap;
 
@@ -50,14 +56,122 @@ internal static class AppBootstrap
         return registry;
     }
 
+    /// <summary>
+    /// 初始化布局引擎与编辑模式，并把布局变更实时写回 <c>layout.toml</c>。
+    /// </summary>
+    public static (LayoutEngine Layout, EditModeService EditMode) InitializeLayout()
+    {
+        var spacing = App.Configuration.GetOrDefault("layout.grid_spacing", 8);
+        var calculator = new GridCalculator(spacing);
+        var metrics = calculator.Calculate(GetPrimaryDisplay());
+
+        var layout = new LayoutEngine(metrics);
+        var editMode = new EditModeService();
+
+        var restored = LoadLayout(layout);
+        AppLog.Info($"布局网格 {metrics.Columns}x{metrics.Rows}，单元 {metrics.CellWidth:F0}x{metrics.CellHeight:F0}，已恢复组件 {restored} 个");
+
+        layout.LayoutChanged += (_, _) => SaveLayout(layout);
+        editMode.EditModeChanged += (_, _) =>
+            AppLog.Info(editMode.IsEditing ? "进入编辑模式" : "退出编辑模式");
+
+        return (layout, editMode);
+    }
+
+    /// <summary>
+    /// 读取主显示器的工作区尺寸。
+    /// </summary>
+    public static DisplayMetrics GetPrimaryDisplay()
+    {
+        var windowId = Win32Interop.GetWindowIdFromWindow(WindowNative.GetWindowHandle(App.Window));
+        var area = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
+        var workArea = area.WorkArea;
+
+        return new DisplayMetrics(workArea.Width, workArea.Height, workArea.Width / Math.Max(1.0, area.WorkArea.Width));
+    }
+
     private static void EnsureLayoutFile()
     {
-        if (File.Exists(ConfigPaths.LayoutFile))
+        if (!File.Exists(ConfigPaths.LayoutFile))
         {
-            return;
+            File.WriteAllText(ConfigPaths.LayoutFile, TomlSerializer.Serialize(DefaultConfig.CreateLayout()));
+        }
+    }
+
+    private static int LoadLayout(LayoutEngine layout)
+    {
+        try
+        {
+            var table = TomlSerializer.Parse(File.ReadAllText(ConfigPaths.LayoutFile));
+            if (table.Find("widgets") is not TomlArray { Items.Count: > 0 } widgets)
+            {
+                return 0;
+            }
+
+            var placements = new List<WidgetPlacement>();
+            foreach (var node in widgets.Items.OfType<TomlTable>())
+            {
+                if (ReadPlacement(node) is { } placement)
+                {
+                    placements.Add(placement);
+                }
+            }
+
+            return layout.Load(placements);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("布局文件读取失败，已从空布局启动", ex);
+            return 0;
+        }
+    }
+
+    private static WidgetPlacement? ReadPlacement(TomlTable node)
+    {
+        if (node["id"] is not TomlScalar { Value: string id } || string.IsNullOrWhiteSpace(id))
+        {
+            return null;
         }
 
-        var layout = Lithe.Config.Toml.TomlSerializer.Serialize(DefaultConfig.CreateLayout());
-        File.WriteAllText(ConfigPaths.LayoutFile, layout);
+        var column = ReadInt(node, "col");
+        var row = ReadInt(node, "row");
+        var colSpan = Math.Max(1, ReadInt(node, "col_span", 1));
+        var rowSpan = Math.Max(1, ReadInt(node, "row_span", 1));
+
+        return new WidgetPlacement(id, new GridCell(column, row, colSpan, rowSpan));
+    }
+
+    private static int ReadInt(TomlTable node, string key, int fallback = 0)
+    {
+        return node[key] is TomlScalar { Value: long value } ? (int)value : fallback;
+    }
+
+    private static void SaveLayout(LayoutEngine layout)
+    {
+        try
+        {
+            var table = new TomlTable();
+            table.SetPath("meta.version", TomlNode.Scalar(1));
+            table.SetPath("widgets", new TomlArray([.. layout.GetAllPlacements().Select(WritePlacement)]));
+
+            var temp = ConfigPaths.LayoutFile + ".tmp";
+            File.WriteAllText(temp, TomlSerializer.Serialize(table));
+            File.Move(temp, ConfigPaths.LayoutFile, overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("布局保存失败", ex);
+        }
+    }
+
+    private static TomlTable WritePlacement(WidgetPlacement placement)
+    {
+        var node = new TomlTable();
+        node.SetPath("id", TomlNode.Scalar(placement.WidgetId));
+        node.SetPath("col", TomlNode.Scalar(placement.Cell.Column));
+        node.SetPath("row", TomlNode.Scalar(placement.Cell.Row));
+        node.SetPath("col_span", TomlNode.Scalar(placement.Cell.ColSpan));
+        node.SetPath("row_span", TomlNode.Scalar(placement.Cell.RowSpan));
+        return node;
     }
 }
