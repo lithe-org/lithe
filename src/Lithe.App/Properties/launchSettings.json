@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Lithe.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Lithe.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
