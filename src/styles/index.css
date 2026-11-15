@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* PRD 6.5 基线：高度 28~36（默认 30）、内边距 12、图标 16、间距 8~10、字号 12~13、圆角 6~8。
+   数值由 tokens.test.ts 钉住，改动需同步修改区间断言。 */
+:root {
+  --lithe-bar-height: 30px;
+  --lithe-bar-padding-x: 12px;
+  --lithe-icon-size: 16px;
+  --lithe-icon-gap: 8px;
+  --lithe-font-size: 13px;
+  --lithe-radius: 6px;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+/* 顶栏窗口本身透明，着色层由组件按需叠加，避免 WebView 背景盖住毛玻璃。 */
+body {
+  background: transparent;
+  font-size: var(--lithe-font-size);
+  overflow: hidden;
+}
