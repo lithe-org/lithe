@@ -1,3 +1,4 @@
+pub mod appbar;
 pub mod commands;
 pub mod status;
 pub mod window;

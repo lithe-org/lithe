@@ -39,6 +39,11 @@ pub fn configure(app: &App) -> Result<(), String> {
 
     // 配置 visible=false，几何与样式就位后再显示，避免启动瞬间闪出 800px 的窄窗口。
     window.show().map_err(|error| error.to_string())?;
+
+    // 注册必须在窗口尺寸确定之后：shell 按条带矩形切工作区，旧矩形会留下错位空白。
+    if width > 0 {
+        crate::appbar::register_for_window(&window, width, BAR_HEIGHT as i32);
+    }
     Ok(())
 }
 
