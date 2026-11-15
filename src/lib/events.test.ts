@@ -26,6 +26,7 @@ describe("前台切换事件订阅", () => {
       payload: { name: "记事本", executable: "notepad.exe", controllable: true },
     });
     expect(useSystemStore.getState().foregroundApp).toBe("记事本");
+    expect(useSystemStore.getState().foregroundControllable).toBe(true);
 
     unlisteners.forEach((fn) => fn());
     expect(unlisten).toHaveBeenCalledTimes(1);

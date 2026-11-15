@@ -27,6 +27,16 @@ describe("system store 骨架", () => {
     expect(state.memoryPercent).toBe(61);
   });
 
+  it("可控性 setter 只改可控性，不覆盖应用名", () => {
+    useSystemStore.getState().setForegroundApp("记事本");
+    useSystemStore.getState().setForegroundControllable(true);
+    useSystemStore.getState().setForegroundControllable(false);
+
+    const state = useSystemStore.getState();
+    expect(state.foregroundControllable).toBe(false);
+    expect(state.foregroundApp).toBe("记事本");
+  });
+
   it("patch 只覆盖给定字段，未涉及的嵌套对象保持同一引用", () => {
     const wifiBefore = useSystemStore.getState().wifi;
     useSystemStore.getState().patch({ time: "12:00" });

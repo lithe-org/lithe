@@ -26,14 +26,23 @@ async function openLogoMenu(element: HTMLElement) {
 
 function StatusBar() {
   const foregroundApp = useSystemStore((state) => state.foregroundApp);
+  const foregroundControllable = useSystemStore(
+    (state) => state.foregroundControllable,
+  );
   const setForegroundApp = useSystemStore((state) => state.setForegroundApp);
+  const setForegroundControllable = useSystemStore(
+    (state) => state.setForegroundControllable,
+  );
   const time = useSystemStore((state) => state.time);
 
   useEffect(() => {
     let cancelled = false;
     getForegroundApp()
       .then((app) => {
-        if (!cancelled) setForegroundApp(app.name);
+        if (!cancelled) {
+          setForegroundApp(app.name);
+          setForegroundControllable(app.controllable);
+        }
       })
       .catch(() => {
         // IPC 不可用时保留占位文案，不让顶栏启动被一次查询打断。
@@ -41,7 +50,7 @@ function StatusBar() {
     return () => {
       cancelled = true;
     };
-  }, [setForegroundApp]);
+  }, [setForegroundApp, setForegroundControllable]);
 
   useEffect(() => {
     // 依赖为空：订阅只建立一次，避免每次渲染解绑重绑导致事件丢失（坑 #27）。
@@ -103,7 +112,7 @@ function StatusBar() {
         className="flex items-center gap-[var(--lithe-icon-gap)]"
         data-testid="zone-center"
       >
-        <WindowControls />
+        {foregroundControllable ? <WindowControls /> : null}
       </section>
 
       <section

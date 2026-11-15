@@ -18,7 +18,10 @@ export const EVENTS = {
 export function registerSystemEvents(): Promise<UnlistenFn[]> {
   return Promise.all([
     listen<ForegroundApp>(EVENTS.foregroundChanged, (event) => {
-      useSystemStore.getState().setForegroundApp(event.payload.name);
+      const { setForegroundApp, setForegroundControllable } =
+        useSystemStore.getState();
+      setForegroundApp(event.payload.name);
+      setForegroundControllable(event.payload.controllable);
     }),
   ]);
 }

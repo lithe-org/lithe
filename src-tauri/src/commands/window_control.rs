@@ -23,6 +23,11 @@ pub fn capture_control_target() -> Option<ForegroundApp> {
 }
 
 #[tauri::command]
+pub fn is_controllable_foreground() -> bool {
+    is_controllable_window(unsafe { GetForegroundWindow() })
+}
+
+#[tauri::command]
 pub fn toggle_topmost() -> Result<(), String> {
     with_target(|hwnd| unsafe {
         let insert_after = if is_topmost_style(GetWindowLongPtrW(hwnd, GWL_EXSTYLE)) {

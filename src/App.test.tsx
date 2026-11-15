@@ -106,6 +106,21 @@ describe("顶栏骨架", () => {
     });
   });
 
+  it("前台窗口不可控时隐藏中段按钮组，切回应用后恢复", async () => {
+    vi.mocked(invoke).mockResolvedValue({
+      ...defaultForegroundApp,
+      controllable: false,
+    });
+
+    await renderApp();
+    expect(screen.queryByTestId("window-controls")).toBeNull();
+
+    act(() => {
+      useSystemStore.getState().setForegroundControllable(true);
+    });
+    expect(screen.getByTestId("window-controls")).not.toBeNull();
+  });
+
   it("popup label 的窗口渲染下拉宿主而不是顶栏，避免两套 UI 串台", async () => {
     vi.mocked(getCurrentWindow).mockReturnValue({ label: "popup-0" } as never);
 

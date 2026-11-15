@@ -22,6 +22,7 @@ pub fn run() {
             commands::system::get_foreground_app,
             commands::system::get_system_status,
             commands::window_control::capture_control_target,
+            commands::window_control::is_controllable_foreground,
             commands::window_control::minimize_foreground,
             commands::window_control::toggle_maximize,
             commands::window_control::toggle_topmost
