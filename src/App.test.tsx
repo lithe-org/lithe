@@ -46,7 +46,7 @@ describe("顶栏骨架", () => {
     expect(screen.getByTestId("zone-center")).not.toBeNull();
     expect(screen.getByTestId("zone-right")).not.toBeNull();
 
-    expect(screen.getByTestId("windows-logo-placeholder")).not.toBeNull();
+    expect(screen.getByTestId("windows-logo")).not.toBeNull();
     expect(screen.getByTestId("foreground-app").textContent).toBe("应用");
     expect(screen.getByTestId("zone-center").childElementCount).toBe(0);
     expect(screen.getByTestId("clock").textContent).toMatch(/^\d{2}:\d{2}$/);

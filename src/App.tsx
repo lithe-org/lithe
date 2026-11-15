@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { UnlistenFn } from "@tauri-apps/api/event";
+import { WindowsLogo } from "./components/WindowsLogo";
 import { getForegroundApp } from "./lib/api";
 import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
@@ -58,19 +59,14 @@ function App() {
 
   return (
     <div
-      className="lithe-root grid h-[var(--lithe-bar-height)] w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-[var(--lithe-icon-gap)] px-[var(--lithe-bar-padding-x)]"
+      className="lithe-root grid h-[var(--lithe-bar-height)] w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-[var(--lithe-icon-gap)] bg-[var(--lithe-bar-tint)] px-[var(--lithe-bar-padding-x)] text-[var(--lithe-bar-fg)]"
       data-testid="lithe-root"
     >
       <section
         className="flex min-w-0 items-center gap-[var(--lithe-icon-gap)]"
         data-testid="zone-left"
       >
-        {/* M2-03 替换为 SVG 四格 logo；先用方块占位，避免引入系统字符图标。 */}
-        <span
-          aria-hidden="true"
-          className="block size-[var(--lithe-icon-size)] shrink-0 rounded-[2px] bg-current opacity-80"
-          data-testid="windows-logo-placeholder"
-        />
+        <WindowsLogo />
         {/* M2 起按 PRD 5.2.2 改为区域内横向滚动，骨架阶段先截断以免撑破布局。 */}
         <span className="min-w-0 truncate" data-testid="foreground-app">
           {foregroundApp}

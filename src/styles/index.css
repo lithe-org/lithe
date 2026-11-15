@@ -11,6 +11,9 @@
   --lithe-icon-gap: 8px;
   --lithe-font-size: 13px;
   --lithe-radius: 6px;
+  /* 毛玻璃之上再压一层半透明着色，保证任意壁纸下文字对比度都够。 */
+  --lithe-bar-tint: rgba(255, 255, 255, 0.32);
+  --lithe-bar-fg: rgba(18, 18, 20, 0.92);
 }
 
 html,

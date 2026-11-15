@@ -8,13 +8,14 @@ use windows_sys::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId,
+    GetClassNameW, GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId,
 };
 
 use crate::commands::system::ForegroundApp;
 
 const TITLE_BUFFER_CHARS: usize = 512;
 const PATH_BUFFER_CHARS: usize = 32768;
+const CLASS_BUFFER_CHARS: usize = 64;
 
 // PRD 5.2.2：浏览器标题是网页标题，必须回落到应用自身的名称。
 const BROWSER_NAMES: &[(&str, &str)] = &[
@@ -34,12 +35,32 @@ pub struct ForegroundSnapshot {
     pub description: Option<String>,
 }
 
+/// 桌面窗口类属于 explorer.exe；按普通进程读会显示「Windows 文件资源管理器」。
+pub fn desktop_name(class_name: &str) -> Option<&'static str> {
+    matches!(class_name, "Progman" | "WorkerW").then_some("桌面")
+}
+
 pub fn capture_app() -> ForegroundApp {
-    let snapshot = capture_snapshot();
+    let hwnd: HWND = unsafe { GetForegroundWindow() };
+    if hwnd.is_null() {
+        return ForegroundApp {
+            name: "应用".to_string(),
+            executable: String::new(),
+            controllable: true,
+        };
+    }
+    if let Some(name) = desktop_name(&window_class(hwnd)) {
+        return ForegroundApp {
+            name: name.to_string(),
+            executable: String::new(),
+            controllable: false,
+        };
+    }
+    let snapshot = snapshot_for(hwnd);
     ForegroundApp {
         name: resolve_name(&snapshot),
         executable: exe_file_name(&snapshot.exe_path),
-        // 桌面 / 任务栏 / Lithe 自身的判定在 M2-08 实现，此处先保持契约字段稳定。
+        // 任务栏与 Lithe 自身的可控性判定在 M2-08 补齐。
         controllable: true,
     }
 }
@@ -96,19 +117,33 @@ pub fn exe_file_name(path: &str) -> String {
 }
 
 pub fn capture_snapshot() -> ForegroundSnapshot {
+    let hwnd: HWND = unsafe { GetForegroundWindow() };
+    if hwnd.is_null() {
+        return ForegroundSnapshot::default();
+    }
+    snapshot_for(hwnd)
+}
+
+fn snapshot_for(hwnd: HWND) -> ForegroundSnapshot {
+    let title = read_window_title(hwnd);
+    let exe_path = read_process_path(hwnd);
+    let description = read_file_description(&exe_path);
+    ForegroundSnapshot {
+        title,
+        exe_path,
+        description,
+    }
+}
+
+fn window_class(hwnd: HWND) -> String {
+    // FFI 边界收在显式 unsafe 块内（edition 2024）。
     unsafe {
-        let hwnd: HWND = GetForegroundWindow();
-        if hwnd.is_null() {
-            return ForegroundSnapshot::default();
+        let mut buffer = [0u16; CLASS_BUFFER_CHARS];
+        let length = GetClassNameW(hwnd, buffer.as_mut_ptr(), buffer.len() as i32);
+        if length <= 0 {
+            return String::new();
         }
-        let title = read_window_title(hwnd);
-        let exe_path = read_process_path(hwnd);
-        let description = read_file_description(&exe_path);
-        ForegroundSnapshot {
-            title,
-            exe_path,
-            description,
-        }
+        String::from_utf16_lossy(&buffer[..(length as usize).min(buffer.len())])
     }
 }
 
@@ -271,6 +306,14 @@ mod tests {
     fn placeholder_is_used_when_every_source_is_empty() {
         let app = snapshot(Some("  "), "", "");
         assert_eq!(resolve_name(&app), "应用");
+    }
+
+    #[test]
+    fn desktop_classes_are_shown_as_desktop_not_explorer() {
+        // 桌面窗口属于 explorer.exe，按普通进程读会显示「Windows 文件资源管理器」。
+        assert_eq!(desktop_name("Progman"), Some("桌面"));
+        assert_eq!(desktop_name("WorkerW"), Some("桌面"));
+        assert_eq!(desktop_name("Chrome_WidgetWin_1"), None);
     }
 
     #[test]

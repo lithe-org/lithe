@@ -18,14 +18,15 @@ pub fn bar_rect(top: i32, width: i32, height: i32) -> RECT {
     }
 }
 
-/// ABM_QUERYPOS 会按当前工作区裁剪边缘，必须把底边改回 top + height，
-/// 否则 shell 可能把条带压扁，最大化窗口仍会压住顶栏。
-pub fn pin_height(rect: RECT, height: i32) -> RECT {
+/// ABM_QUERYPOS 会按当前工作区裁剪边缘（工作区有残留时 top 会被下移），
+/// 必须把上下边强制改回期望值，否则条带连同窗口一起被推进工作区，
+/// 反而盖住最大化窗口的标题栏。
+pub fn pin_bounds(rect: RECT, top: i32, height: i32) -> RECT {
     RECT {
         left: rect.left,
-        top: rect.top,
+        top,
         right: rect.right,
-        bottom: rect.top + height,
+        bottom: top + height,
     }
 }
 
@@ -34,6 +35,10 @@ pub fn register(hwnd: HWND, rect: RECT) -> bool {
         return false;
     }
     unsafe {
+        // 热重载或重复调用时先移除旧注册，否则 shell 会叠加多条预留。
+        let mut stale = app_bar_data(hwnd);
+        SHAppBarMessage(ABM_REMOVE, &mut stale);
+
         let mut data = app_bar_data(hwnd);
         if SHAppBarMessage(ABM_NEW, &mut data) == 0 {
             return false;
@@ -41,7 +46,7 @@ pub fn register(hwnd: HWND, rect: RECT) -> bool {
         data.uEdge = ABE_TOP;
         data.rc = rect;
         SHAppBarMessage(ABM_QUERYPOS, &mut data);
-        data.rc = pin_height(data.rc, rect.bottom - rect.top);
+        data.rc = pin_bounds(data.rc, rect.top, rect.bottom - rect.top);
         let registered = SHAppBarMessage(ABM_SETPOS, &mut data) != 0;
         if registered {
             remember(hwnd);
@@ -120,16 +125,16 @@ mod tests {
     }
 
     #[test]
-    fn pin_height_restores_the_bar_after_querypos_shrinks_it() {
-        // QUERYPOS 会按工作区裁剪，若直接把裁剪结果交给 SETPOS，最大化窗口会盖住顶栏。
+    fn pin_bounds_forces_the_bar_back_to_the_screen_top() {
+        // 工作区有残留时 QUERYPOS 会返回 top=30，原样 SETPOS 会把窗口推进工作区。
         let queried = RECT {
             left: 0,
-            top: 0,
+            top: 30,
             right: 1920,
-            bottom: 12,
+            bottom: 42,
         };
-        let pinned = pin_height(queried, 30);
-        assert_eq!(pinned.bottom - pinned.top, 30);
+        let pinned = pin_bounds(queried, 0, 30);
+        assert_eq!((pinned.top, pinned.bottom), (0, 30));
         assert_eq!(pinned.right, 1920);
     }
 
