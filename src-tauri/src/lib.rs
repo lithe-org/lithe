@@ -5,7 +5,7 @@ pub mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::system::get_foreground_app,
@@ -17,6 +17,17 @@ pub fn run() {
             window::configure(app)?;
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, event| {
+        // 正常退出必须注销 AppBar，否则工作区顶部会永久留白；
+        // 进程被强杀时无法清理，列为已知限制（PRD 13 章记录）。
+        if matches!(
+            event,
+            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+        ) {
+            appbar::unregister_registered();
+        }
+    });
 }

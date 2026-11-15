@@ -1,8 +1,12 @@
 use std::ffi::c_void;
+use std::sync::Mutex;
 use windows_sys::Win32::Foundation::{HWND, RECT};
 use windows_sys::Win32::UI::Shell::{
     SHAppBarMessage, ABE_TOP, ABM_NEW, ABM_QUERYPOS, ABM_REMOVE, ABM_SETPOS, APPBARDATA,
 };
+
+// 退出阶段主窗口可能已销毁、拿不到 hwnd，因此单独记住注册成功的那一个句柄。
+static REGISTERED_HWND: Mutex<Option<isize>> = Mutex::new(None);
 
 /// 顶部条带：从主屏左上角起算，宽度铺满。
 pub fn bar_rect(top: i32, width: i32, height: i32) -> RECT {
@@ -38,7 +42,11 @@ pub fn register(hwnd: HWND, rect: RECT) -> bool {
         data.rc = rect;
         SHAppBarMessage(ABM_QUERYPOS, &mut data);
         data.rc = pin_height(data.rc, rect.bottom - rect.top);
-        SHAppBarMessage(ABM_SETPOS, &mut data) != 0
+        let registered = SHAppBarMessage(ABM_SETPOS, &mut data) != 0;
+        if registered {
+            remember(hwnd);
+        }
+        registered
     }
 }
 
@@ -49,6 +57,19 @@ pub fn unregister(hwnd: HWND) {
     unsafe {
         let mut data = app_bar_data(hwnd);
         SHAppBarMessage(ABM_REMOVE, &mut data);
+    }
+    forget();
+}
+
+/// 退出路径专用：不依赖主窗口是否还在，取出记录的句柄再注销。
+/// 重复调用是安全的，取出后即清空。
+pub fn unregister_registered() {
+    if let Some(raw) = REGISTERED_HWND
+        .lock()
+        .ok()
+        .and_then(|mut registered| registered.take())
+    {
+        unregister(raw as HWND);
     }
 }
 
@@ -62,6 +83,18 @@ pub fn register_for_window(window: &tauri::WebviewWindow, width: i32, height: i3
 pub fn unregister_for_window(window: &tauri::WebviewWindow) {
     if let Ok(hwnd) = window.hwnd() {
         unregister((hwnd.0 as isize) as *mut c_void);
+    }
+}
+
+fn remember(hwnd: HWND) {
+    if let Ok(mut registered) = REGISTERED_HWND.lock() {
+        *registered = Some(hwnd as isize);
+    }
+}
+
+fn forget() {
+    if let Ok(mut registered) = REGISTERED_HWND.lock() {
+        *registered = None;
     }
 }
 
@@ -104,5 +137,22 @@ mod tests {
     fn null_handles_are_ignored_for_register_and_unregister() {
         assert!(!register(std::ptr::null_mut(), bar_rect(0, 1920, 30)));
         unregister(std::ptr::null_mut());
+    }
+
+    #[test]
+    fn exit_path_must_unregister_the_app_bar() {
+        // 漏掉这一步只会表现为「退出后工作区顶部永久留白」，重启前难以发现。
+        let lib_source = include_str!("../lib.rs");
+        let exit_start = lib_source
+            .find("RunEvent::Exit")
+            .expect("lib.rs 缺少退出事件处理");
+        assert!(lib_source[exit_start..].contains("unregister_registered"));
+    }
+
+    #[test]
+    fn unregister_without_registration_is_a_no_op() {
+        // 注册可能被系统策略阻止，退出清理必须容忍「从未注册成功」。
+        unregister_registered();
+        assert!(REGISTERED_HWND.lock().unwrap().is_none());
     }
 }
