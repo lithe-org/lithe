@@ -37,10 +37,25 @@ describe("中段窗口控制按钮组", () => {
       fireEvent.mouseEnter(screen.getByTestId("window-controls"));
     });
 
-    expect(invoke).toHaveBeenCalledWith("get_foreground_app");
+    expect(invoke).toHaveBeenCalledWith("capture_control_target");
     expect(
       screen.getByTestId("window-control-pin").getAttribute("title"),
     ).toBe("置顶：记事本");
+  });
+
+  it("鼠标按下重新捕获目标，点击置顶调用对应命令", async () => {
+    render(<WindowControls />);
+    const pin = screen.getByTestId("window-control-pin");
+
+    await act(async () => {
+      fireEvent.mouseDown(pin);
+    });
+    await act(async () => {
+      fireEvent.click(pin);
+    });
+
+    expect(invoke).toHaveBeenCalledWith("capture_control_target");
+    expect(invoke).toHaveBeenCalledWith("toggle_topmost");
   });
 
   it("拉取失败时退回只显示动作名，不留下空提示", async () => {

@@ -46,7 +46,7 @@ pub fn capture_app() -> ForegroundApp {
         return ForegroundApp {
             name: "应用".to_string(),
             executable: String::new(),
-            controllable: true,
+            controllable: false,
         };
     }
     if let Some(name) = desktop_name(&window_class(hwnd)) {
@@ -56,13 +56,39 @@ pub fn capture_app() -> ForegroundApp {
             controllable: false,
         };
     }
+    app_for_window(hwnd)
+}
+
+/// 供窗口控制命令复用：把任意窗口描述成前端契约。
+pub fn app_for_window(hwnd: HWND) -> ForegroundApp {
     let snapshot = snapshot_for(hwnd);
     ForegroundApp {
         name: resolve_name(&snapshot),
         executable: exe_file_name(&snapshot.exe_path),
-        // 任务栏与 Lithe 自身的可控性判定在 M2-08 补齐。
-        controllable: true,
+        controllable: is_controllable_window(hwnd),
     }
+}
+
+/// 桌面、任务栏与 Lithe 自身不能作为窗口控制对象（PRD 5.3.2）。
+pub fn is_controllable_window(hwnd: HWND) -> bool {
+    if hwnd.is_null() {
+        return false;
+    }
+    let class = window_class(hwnd);
+    if matches!(
+        class.as_str(),
+        "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"
+    ) {
+        return false;
+    }
+    let pid = window_process_id(hwnd);
+    pid != 0 && pid != std::process::id()
+}
+
+pub fn window_process_id(hwnd: HWND) -> u32 {
+    let mut pid = 0u32;
+    unsafe { GetWindowThreadProcessId(hwnd, &mut pid) };
+    pid
 }
 
 /// 纯逻辑，按 PRD 5.2.2 的优先级解析；与 Win32 调用分离后才能脱离桌面环境做单测。
@@ -161,12 +187,11 @@ fn read_window_title(hwnd: HWND) -> String {
 }
 
 fn read_process_path(hwnd: HWND) -> String {
+    let pid = window_process_id(hwnd);
+    if pid == 0 {
+        return String::new();
+    }
     unsafe {
-        let mut pid = 0u32;
-        GetWindowThreadProcessId(hwnd, &mut pid);
-        if pid == 0 {
-            return String::new();
-        }
         let process: HANDLE = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
         if process.is_null() {
             return String::new();
@@ -306,6 +331,12 @@ mod tests {
     fn placeholder_is_used_when_every_source_is_empty() {
         let app = snapshot(Some("  "), "", "");
         assert_eq!(resolve_name(&app), "应用");
+    }
+
+    #[test]
+    fn null_window_cannot_be_controlled() {
+        // 空句柄必须提前拒绝，否则后续读取窗口样式会拿到随机值。
+        assert!(!is_controllable_window(std::ptr::null_mut()));
     }
 
     #[test]

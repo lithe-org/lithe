@@ -20,7 +20,11 @@ pub fn run() {
             commands::power::shutdown,
             commands::power::sleep,
             commands::system::get_foreground_app,
-            commands::system::get_system_status
+            commands::system::get_system_status,
+            commands::window_control::capture_control_target,
+            commands::window_control::minimize_foreground,
+            commands::window_control::toggle_maximize,
+            commands::window_control::toggle_topmost
         ])
         .setup(|app| {
             // 监听在独立线程跑消息循环，不阻塞状态栏启动。

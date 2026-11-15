@@ -44,3 +44,20 @@ export function showPopup(anchor: LogicalRect, kind: PopupKind): Promise<void> {
 export function hidePopup(): Promise<void> {
   return invoke("hide_popup");
 }
+
+/** 鼠标按下瞬间捕获控制目标；返回 null 表示当前窗口不可控制。 */
+export function captureControlTarget(): Promise<ForegroundApp | null> {
+  return invoke<ForegroundApp | null>("capture_control_target");
+}
+
+export function toggleTopmost(): Promise<void> {
+  return invoke("toggle_topmost");
+}
+
+export function toggleMaximize(): Promise<void> {
+  return invoke("toggle_maximize");
+}
+
+export function minimizeForeground(): Promise<void> {
+  return invoke("minimize_foreground");
+}
