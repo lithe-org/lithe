@@ -83,6 +83,7 @@ describe("前后端通信契约", () => {
     expect(rustWindowControl).toContain("pub fn toggle_topmost()");
     expect(rustWindowControl).toContain("pub fn toggle_maximize()");
     expect(rustWindowControl).toContain("pub fn minimize_foreground()");
+    expect(rustWindowControl).toContain("pub fn apply_split(");
   });
 
   it("前端事件名必须与 Rust 常量逐字一致，否则订阅永远收不到", () => {

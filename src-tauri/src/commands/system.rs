@@ -98,5 +98,6 @@ mod tests {
         assert!(handler.contains("toggle_topmost"));
         assert!(handler.contains("toggle_maximize"));
         assert!(handler.contains("minimize_foreground"));
+        assert!(handler.contains("apply_split"));
     }
 }

@@ -21,6 +21,7 @@ pub fn run() {
             commands::power::sleep,
             commands::system::get_foreground_app,
             commands::system::get_system_status,
+            commands::window_control::apply_split,
             commands::window_control::capture_control_target,
             commands::window_control::is_controllable_foreground,
             commands::window_control::minimize_foreground,
