@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -15,6 +16,7 @@ const defaultForegroundApp = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(invoke).mockResolvedValue(defaultForegroundApp);
+  vi.mocked(getCurrentWindow).mockReturnValue({ label: "main" } as never);
   // store 是模块级单例，用例间必须复位，否则前一个用例的状态会泄漏到下一个。
   useSystemStore.setState(initialSystemSnapshot);
   useUiStore.setState(initialUiSnapshot);
@@ -85,6 +87,15 @@ describe("顶栏骨架", () => {
     expect(invoke).toHaveBeenCalledWith("get_foreground_app");
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("foreground-app").textContent).toBe("Visual Studio Code");
+  });
+
+  it("popup label 的窗口渲染下拉宿主而不是顶栏，避免两套 UI 串台", async () => {
+    vi.mocked(getCurrentWindow).mockReturnValue({ label: "popup-0" } as never);
+
+    const { container } = await renderApp();
+
+    expect(screen.getByTestId("popup-host")).not.toBeNull();
+    expect(container.querySelector('[data-testid="lithe-root"]')).toBeNull();
   });
 
   it("重渲染不会重复订阅前台切换事件，避免解绑重绑丢事件", async () => {

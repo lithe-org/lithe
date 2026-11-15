@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 import type { UnlistenFn } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { PopupHost } from "./components/PopupHost";
 import { WindowsLogo } from "./components/WindowsLogo";
 import { getForegroundApp } from "./lib/api";
+import { isPopupLabel } from "./lib/windowRole";
 import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
 
-function App() {
+function StatusBar() {
   const foregroundApp = useSystemStore((state) => state.foregroundApp);
   const setForegroundApp = useSystemStore((state) => state.setForegroundApp);
   const time = useSystemStore((state) => state.time);
@@ -88,6 +91,11 @@ function App() {
       </section>
     </div>
   );
+}
+
+function App() {
+  // 顶栏与下拉窗口共用同一份 bundle，按窗口 label 分流后各自的 hooks 互不影响。
+  return isPopupLabel(getCurrentWindow().label) ? <PopupHost /> : <StatusBar />;
 }
 
 export default App;

@@ -3,6 +3,8 @@ pub mod commands;
 pub mod status;
 pub mod window;
 
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -15,6 +17,8 @@ pub fn run() {
             // 监听在独立线程跑消息循环，不阻塞状态栏启动。
             status::watcher::start(app.handle().clone());
             window::configure(app)?;
+            // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
+            app.manage(window::popup_pool::PopupPool::new(app.handle())?);
             Ok(())
         })
         .build(tauri::generate_context!())
