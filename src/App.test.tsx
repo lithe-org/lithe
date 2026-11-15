@@ -30,7 +30,7 @@ async function renderApp() {
 }
 
 describe("顶栏骨架", () => {
-  it("清理模板后只渲染占位文本，不再出现示例文案与图标", async () => {
+  it("清理模板后只渲染顶栏，不再出现示例文案与图标", async () => {
     const { container } = await renderApp();
 
     expect(container.querySelector('[data-testid="lithe-root"]')).not.toBeNull();
@@ -39,17 +39,28 @@ describe("顶栏骨架", () => {
     expect(container.querySelector("form")).toBeNull();
   });
 
-  it("store setter 变更后顶栏占位文本即时刷新，验证订阅链路可用", async () => {
+  it("渲染左中右三区，左区承载 logo 与应用名，中区留空，右区显示时间", async () => {
+    await renderApp();
+
+    expect(screen.getByTestId("zone-left")).not.toBeNull();
+    expect(screen.getByTestId("zone-center")).not.toBeNull();
+    expect(screen.getByTestId("zone-right")).not.toBeNull();
+
+    expect(screen.getByTestId("windows-logo-placeholder")).not.toBeNull();
+    expect(screen.getByTestId("foreground-app").textContent).toBe("应用");
+    expect(screen.getByTestId("zone-center").childElementCount).toBe(0);
+    expect(screen.getByTestId("clock").textContent).toBe("--:--");
+  });
+
+  it("store setter 变更后左侧应用名即时刷新，验证订阅链路可用", async () => {
     await renderApp();
     expect(screen.getByTestId("foreground-app").textContent).toBe("应用");
 
     act(() => {
       useSystemStore.getState().setForegroundApp("记事本");
-      useUiStore.getState().setLanguage("en-US");
     });
 
     expect(screen.getByTestId("foreground-app").textContent).toBe("记事本");
-    expect(screen.getByTestId("language").textContent).toBe("en-US");
   });
 
   it("启动时拉取一次前台应用契约并写入 store，验证前后端链路", async () => {
