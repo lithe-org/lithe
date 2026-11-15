@@ -1,5 +1,9 @@
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { ForegroundApp } from "./api";
+import { useSystemStore } from "../stores/system";
+
 // 与 src-tauri/src/commands/mod.rs 的常量逐字一致，由 api.test.ts 校验漂移。
-// M1-06 起在本文件统一注册 listen，组件不直接订阅事件名字符串。
+// 事件订阅统一在本文件注册，组件不直接引用事件名字符串。
 export const EVENTS = {
   foregroundChanged: "system:foreground-changed",
   statusTick: "system:status-tick",
@@ -8,3 +12,12 @@ export const EVENTS = {
   volumeChanged: "system:volume-changed",
   batteryChanged: "system:battery-changed",
 } as const;
+
+/** 注册系统事件订阅，返回卸载函数供组件卸载时调用，避免重复订阅。 */
+export function registerSystemEvents(): Promise<UnlistenFn[]> {
+  return Promise.all([
+    listen<ForegroundApp>(EVENTS.foregroundChanged, (event) => {
+      useSystemStore.getState().setForegroundApp(event.payload.name);
+    }),
+  ]);
+}

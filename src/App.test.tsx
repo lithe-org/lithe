@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -63,5 +64,16 @@ describe("顶栏骨架", () => {
     expect(invoke).toHaveBeenCalledWith("get_foreground_app");
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("foreground-app").textContent).toBe("Visual Studio Code");
+  });
+
+  it("重渲染不会重复订阅前台切换事件，避免解绑重绑丢事件", async () => {
+    const view = await renderApp();
+    const before = vi.mocked(listen).mock.calls.length;
+
+    await act(async () => {
+      view.rerender(<App />);
+    });
+
+    expect(vi.mocked(listen).mock.calls.length).toBe(before);
   });
 });
