@@ -50,7 +50,11 @@ describe("顶栏骨架", () => {
 
     expect(screen.getByTestId("windows-logo")).not.toBeNull();
     expect(screen.getByTestId("foreground-app").textContent).toBe("应用");
-    expect(screen.getByTestId("zone-center").childElementCount).toBe(0);
+    expect(
+      screen
+        .getByTestId("zone-center")
+        .querySelector('[data-testid="window-controls"]'),
+    ).not.toBeNull();
     expect(screen.getByTestId("clock").textContent).toMatch(/^\d{2}:\d{2}$/);
   });
 

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PopupHost } from "./components/PopupHost";
+import { WindowControls } from "./components/WindowControls";
 import { WindowsLogo } from "./components/WindowsLogo";
 import { getForegroundApp, showPopup } from "./lib/api";
 import { isPopupLabel } from "./lib/windowRole";
@@ -101,7 +102,9 @@ function StatusBar() {
       <section
         className="flex items-center gap-[var(--lithe-icon-gap)]"
         data-testid="zone-center"
-      />
+      >
+        <WindowControls />
+      </section>
 
       <section
         className="flex items-center justify-end gap-[var(--lithe-icon-gap)]"
