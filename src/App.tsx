@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getForegroundApp } from "./lib/api";
+import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
 
@@ -42,6 +43,17 @@ function App() {
       cancelled = true;
       unlisteners.forEach((fn) => fn());
     };
+  }, []);
+
+  useEffect(() => {
+    // 每秒检查一次，但 minute 未变时不写 store，顶栏不会跟着秒针重渲染。
+    const tick = () => {
+      const { time: current, setTime } = useSystemStore.getState();
+      tickClock(current, new Date(), setTime);
+    };
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   return (

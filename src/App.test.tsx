@@ -49,7 +49,7 @@ describe("顶栏骨架", () => {
     expect(screen.getByTestId("windows-logo-placeholder")).not.toBeNull();
     expect(screen.getByTestId("foreground-app").textContent).toBe("应用");
     expect(screen.getByTestId("zone-center").childElementCount).toBe(0);
-    expect(screen.getByTestId("clock").textContent).toBe("--:--");
+    expect(screen.getByTestId("clock").textContent).toMatch(/^\d{2}:\d{2}$/);
   });
 
   it("store setter 变更后左侧应用名即时刷新，验证订阅链路可用", async () => {
@@ -61,6 +61,16 @@ describe("顶栏骨架", () => {
     });
 
     expect(screen.getByTestId("foreground-app").textContent).toBe("记事本");
+  });
+
+  it("右侧时间读取 store 并在变更时刷新", async () => {
+    await renderApp();
+
+    act(() => {
+      useSystemStore.getState().setTime("09:05");
+    });
+
+    expect(screen.getByTestId("clock").textContent).toBe("09:05");
   });
 
   it("启动时拉取一次前台应用契约并写入 store，验证前后端链路", async () => {
