@@ -35,8 +35,10 @@ export interface LogicalRect {
   height: number;
 }
 
-export function showPopup(anchor: LogicalRect): Promise<void> {
-  return invoke("show_popup", { anchor });
+export type PopupKind = "logo" | "control-center" | "split";
+
+export function showPopup(anchor: LogicalRect, kind: PopupKind): Promise<void> {
+  return invoke("show_popup", { anchor, kind });
 }
 
 export function hidePopup(): Promise<void> {

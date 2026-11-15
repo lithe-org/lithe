@@ -98,6 +98,7 @@ describe("顶栏骨架", () => {
 
     expect(invoke).toHaveBeenCalledWith("show_popup", {
       anchor: { x: 0, y: 0, width: 0, height: 0 },
+      kind: "logo",
     });
   });
 

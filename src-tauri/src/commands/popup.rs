@@ -1,9 +1,17 @@
-use tauri::{AppHandle, Manager, PhysicalPosition, State, WebviewWindow};
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, State, WebviewWindow};
 
+use crate::commands::EVENT_POPUP_SHOW;
 use crate::window::placement::{place_popup, LogicalRect, Rect};
 use crate::window::popup_pool::PopupPool;
 
 const POPUP_GAP: i32 = 4;
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PopupShowPayload {
+    kind: String,
+}
 
 #[tauri::command]
 pub fn show_popup(
@@ -11,6 +19,7 @@ pub fn show_popup(
     window: WebviewWindow,
     pool: State<'_, PopupPool>,
     anchor: LogicalRect,
+    kind: String,
 ) -> Result<(), String> {
     // 顶栏位于 (0,0)，逻辑锚点乘 scale 即屏幕物理坐标；M4 多屏时再补显示器偏移。
     let scale = window.scale_factor().map_err(|error| error.to_string())?;
@@ -36,6 +45,10 @@ pub fn show_popup(
         .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
     popup.show().map_err(|error| error.to_string())?;
+    // 池中页面上电即加载，先显示再注入内容不会丢事件。
+    popup
+        .emit(EVENT_POPUP_SHOW, PopupShowPayload { kind })
+        .map_err(|error| error.to_string())?;
     popup.set_focus().map_err(|error| error.to_string())?;
     Ok(())
 }

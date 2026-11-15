@@ -51,8 +51,8 @@ describe("前后端通信契约", () => {
     vi.mocked(invoke).mockResolvedValue(undefined);
     const anchor = { x: 12, y: 0, width: 20, height: 30 };
 
-    await showPopup(anchor);
-    expect(invoke).toHaveBeenCalledWith("show_popup", { anchor });
+    await showPopup(anchor, "logo");
+    expect(invoke).toHaveBeenCalledWith("show_popup", { anchor, kind: "logo" });
 
     await hidePopup();
     expect(invoke).toHaveBeenCalledWith("hide_popup");
@@ -72,5 +72,6 @@ describe("前后端通信契约", () => {
     expect(EVENTS.wifiChanged).toBe(rustEventName("EVENT_WIFI_CHANGED"));
     expect(EVENTS.volumeChanged).toBe(rustEventName("EVENT_VOLUME_CHANGED"));
     expect(EVENTS.batteryChanged).toBe(rustEventName("EVENT_BATTERY_CHANGED"));
+    expect(EVENTS.popupShow).toBe(rustEventName("EVENT_POPUP_SHOW"));
   });
 });

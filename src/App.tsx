@@ -12,12 +12,15 @@ import { useSystemStore } from "./stores/system";
 async function openLogoMenu(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
   // 落点交给 Rust 计算，超出屏幕时会翻转或平移。
-  await showPopup({
-    x: rect.left,
-    y: rect.top,
-    width: rect.width,
-    height: rect.height,
-  });
+  await showPopup(
+    {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+    },
+    "logo",
+  );
 }
 
 function StatusBar() {

@@ -11,6 +11,7 @@ export const EVENTS = {
   wifiChanged: "system:wifi-changed",
   volumeChanged: "system:volume-changed",
   batteryChanged: "system:battery-changed",
+  popupShow: "popup:show",
 } as const;
 
 /** 注册系统事件订阅，返回卸载函数供组件卸载时调用，避免重复订阅。 */
