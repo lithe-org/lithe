@@ -26,3 +26,19 @@ export function getForegroundApp(): Promise<ForegroundApp> {
 export function getSystemStatus(): Promise<SystemStatus> {
   return invoke<SystemStatus>("get_system_status");
 }
+
+/** 锚点是顶栏内的 CSS 逻辑坐标，Rust 侧按 DPI 换算成物理像素后再定位。 */
+export interface LogicalRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function showPopup(anchor: LogicalRect): Promise<void> {
+  return invoke("show_popup", { anchor });
+}
+
+export function hidePopup(): Promise<void> {
+  return invoke("hide_popup");
+}

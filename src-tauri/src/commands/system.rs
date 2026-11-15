@@ -91,5 +91,7 @@ mod tests {
 
         assert!(handler.contains("get_foreground_app"));
         assert!(handler.contains("get_system_status"));
+        assert!(handler.contains("show_popup"));
+        assert!(handler.contains("hide_popup"));
     }
 }

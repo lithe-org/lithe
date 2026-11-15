@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { initialSystemSnapshot, useSystemStore } from "./stores/system";
@@ -87,6 +87,18 @@ describe("顶栏骨架", () => {
     expect(invoke).toHaveBeenCalledWith("get_foreground_app");
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("foreground-app").textContent).toBe("Visual Studio Code");
+  });
+
+  it("点击 logo 调用 show_popup 并传入锚点矩形，由 Rust 负责落点", async () => {
+    await renderApp();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("windows-logo-button"));
+    });
+
+    expect(invoke).toHaveBeenCalledWith("show_popup", {
+      anchor: { x: 0, y: 0, width: 0, height: 0 },
+    });
   });
 
   it("popup label 的窗口渲染下拉宿主而不是顶栏，避免两套 UI 串台", async () => {

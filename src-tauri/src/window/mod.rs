@@ -1,3 +1,4 @@
+pub mod placement;
 pub mod popup_pool;
 
 use tauri::window::{Effect, EffectsBuilder};

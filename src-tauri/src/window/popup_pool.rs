@@ -56,10 +56,8 @@ impl PopupPool {
     }
 
     pub fn acquire(&self) -> Option<WebviewWindow> {
-        let window = self.slots.acquire()?;
-        let _ = window.show();
-        let _ = window.set_focus();
-        Some(window)
+        // 只取窗口不显示：调用方先定位再 show，避免面板先闪到上一次的位置。
+        self.slots.acquire()
     }
 
     pub fn release(&self, window: WebviewWindow) {

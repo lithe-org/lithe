@@ -1,11 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getForegroundApp, getSystemStatus } from "./api";
+import { getForegroundApp, getSystemStatus, hidePopup, showPopup } from "./api";
 import { EVENTS } from "./events";
 
 const rustEvents = readFileSync("src-tauri/src/commands/mod.rs", "utf8");
 const rustCommands = readFileSync("src-tauri/src/commands/system.rs", "utf8");
+const rustPopupCommands = readFileSync("src-tauri/src/commands/popup.rs", "utf8");
 
 function rustEventName(constant: string): string {
   const match = rustEvents.match(new RegExp(`pub const ${constant}: &str = "([^"]+)"`));
@@ -46,9 +47,22 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledTimes(1);
   });
 
+  it("showPopup / hidePopup 调用 Rust 同名命令并透传锚点", async () => {
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    const anchor = { x: 12, y: 0, width: 20, height: 30 };
+
+    await showPopup(anchor);
+    expect(invoke).toHaveBeenCalledWith("show_popup", { anchor });
+
+    await hidePopup();
+    expect(invoke).toHaveBeenCalledWith("hide_popup");
+  });
+
   it("前端命令名必须能在 Rust 侧找到同名 command 函数", () => {
     expect(rustCommands).toContain("pub fn get_foreground_app()");
     expect(rustCommands).toContain("pub fn get_system_status()");
+    expect(rustPopupCommands).toContain("pub fn show_popup(");
+    expect(rustPopupCommands).toContain("pub fn hide_popup(");
   });
 
   it("前端事件名必须与 Rust 常量逐字一致，否则订阅永远收不到", () => {

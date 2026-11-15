@@ -3,11 +3,22 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PopupHost } from "./components/PopupHost";
 import { WindowsLogo } from "./components/WindowsLogo";
-import { getForegroundApp } from "./lib/api";
+import { getForegroundApp, showPopup } from "./lib/api";
 import { isPopupLabel } from "./lib/windowRole";
 import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
+
+async function openLogoMenu(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  // 落点交给 Rust 计算，超出屏幕时会翻转或平移。
+  await showPopup({
+    x: rect.left,
+    y: rect.top,
+    width: rect.width,
+    height: rect.height,
+  });
+}
 
 function StatusBar() {
   const foregroundApp = useSystemStore((state) => state.foregroundApp);
@@ -69,7 +80,15 @@ function StatusBar() {
         className="flex min-w-0 items-center gap-[var(--lithe-icon-gap)]"
         data-testid="zone-left"
       >
-        <WindowsLogo />
+        <button
+          aria-label="Lithe 菜单"
+          className="flex shrink-0 items-center rounded-[var(--lithe-radius)] p-0.5 hover:bg-black/10"
+          data-testid="windows-logo-button"
+          onClick={(event) => void openLogoMenu(event.currentTarget)}
+          type="button"
+        >
+          <WindowsLogo />
+        </button>
         {/* M2 起按 PRD 5.2.2 改为区域内横向滚动，骨架阶段先截断以免撑破布局。 */}
         <span className="min-w-0 truncate" data-testid="foreground-app">
           {foregroundApp}

@@ -1,3 +1,4 @@
+pub mod popup;
 pub mod system;
 
 // 事件名是前后端共享契约，前端 src/lib/events.ts 逐字对齐；改名必须两边同步。

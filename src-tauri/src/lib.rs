@@ -10,6 +10,8 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            commands::popup::hide_popup,
+            commands::popup::show_popup,
             commands::system::get_foreground_app,
             commands::system::get_system_status
         ])
