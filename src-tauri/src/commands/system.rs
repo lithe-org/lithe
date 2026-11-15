@@ -24,11 +24,7 @@ pub struct SystemStatus {
 
 #[tauri::command]
 pub fn get_foreground_app() -> ForegroundApp {
-    ForegroundApp {
-        name: "应用".to_string(),
-        executable: "lithe.exe".to_string(),
-        controllable: true,
-    }
+    crate::status::foreground::capture_app()
 }
 
 #[tauri::command]
@@ -51,9 +47,9 @@ mod tests {
     #[test]
     fn mock_commands_stay_within_contract_bounds() {
         // 前端直接把百分比与音量渲染到状态栏，越界值会变成可见的脏数据。
+        // executable 依赖真实前台窗口，无桌面的测试环境允许为空；应用名必须始终有兜底。
         let app = get_foreground_app();
         assert!(!app.name.is_empty());
-        assert!(!app.executable.is_empty());
 
         let status = get_system_status();
         assert!((0.0..=100.0).contains(&status.cpu_percent));
@@ -72,7 +68,12 @@ mod tests {
         assert!(status.get("batteryPercent").is_some());
         assert!(status.get("cpu_percent").is_none());
 
-        let app = serde_json::to_value(get_foreground_app()).expect("应用名应可序列化");
+        let app = serde_json::to_value(ForegroundApp {
+            name: "应用".to_string(),
+            executable: String::new(),
+            controllable: true,
+        })
+        .expect("应用名应可序列化");
         assert!(app.get("controllable").is_some());
     }
 
