@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+/* 只扫描前端源码：src-tauri 配置里的 transparent / focus / visible 等键名会被误当成工具类候选。 */
+@source "../";
 
 /* PRD 6.5 基线：高度 28~36（默认 30）、内边距 12、图标 16、间距 8~10、字号 12~13、圆角 6~8。
    数值由 tokens.test.ts 钉住，改动需同步修改区间断言。 */

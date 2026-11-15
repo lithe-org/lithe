@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod status;
+pub mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -12,6 +13,7 @@ pub fn run() {
         .setup(|app| {
             // 监听在独立线程跑消息循环，不阻塞状态栏启动。
             status::watcher::start(app.handle().clone());
+            window::configure(app)?;
             Ok(())
         })
         .run(tauri::generate_context!())

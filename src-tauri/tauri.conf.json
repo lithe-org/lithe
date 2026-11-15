@@ -12,9 +12,20 @@
   "app": {
     "windows": [
       {
-        "title": "app",
+        "label": "main",
+        "title": "Lithe",
         "width": 800,
-        "height": 600
+        "height": 30,
+        "x": 0,
+        "y": 0,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "focus": false,
+        "resizable": false,
+        "visible": false,
+        "shadow": false
       }
     ],
     "security": {
