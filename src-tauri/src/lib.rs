@@ -12,6 +12,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::popup::hide_popup,
             commands::popup::show_popup,
+            commands::power::lock_workstation,
+            commands::power::open_system_info,
+            commands::power::open_task_manager,
+            commands::power::open_windows_settings,
+            commands::power::restart,
+            commands::power::shutdown,
+            commands::power::sleep,
             commands::system::get_foreground_app,
             commands::system::get_system_status
         ])
