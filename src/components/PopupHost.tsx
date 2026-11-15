@@ -3,6 +3,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { EVENTS } from "../lib/events";
 import { LogoMenu } from "./menus/LogoMenu";
+import { SplitMenu } from "./menus/SplitMenu";
 
 /** 下拉窗口的宿主容器；M2-04 起按事件注入 Logo 菜单等面板内容。 */
 export function PopupHost() {
@@ -46,6 +47,7 @@ export function PopupHost() {
       data-testid="popup-host"
     >
       {kind === "logo" ? <LogoMenu /> : null}
+      {kind === "split" ? <SplitMenu /> : null}
     </div>
   );
 }

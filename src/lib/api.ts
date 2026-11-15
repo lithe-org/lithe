@@ -61,3 +61,15 @@ export function toggleMaximize(): Promise<void> {
 export function minimizeForeground(): Promise<void> {
   return invoke("minimize_foreground");
 }
+
+export type SplitLayout =
+  | "left"
+  | "right"
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
+
+export function applySplit(layout: SplitLayout): Promise<void> {
+  return invoke("apply_split", { layout });
+}

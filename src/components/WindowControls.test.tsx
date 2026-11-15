@@ -58,6 +58,20 @@ describe("中段窗口控制按钮组", () => {
     expect(invoke).toHaveBeenCalledWith("toggle_topmost");
   });
 
+  it("点击分屏打开 split 面板，而不是直接执行分屏命令", async () => {
+    render(<WindowControls />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("window-control-split"));
+    });
+
+    expect(invoke).toHaveBeenCalledWith("show_popup", {
+      anchor: { x: 0, y: 0, width: 0, height: 0 },
+      kind: "split",
+    });
+    expect(invoke).not.toHaveBeenCalledWith("apply_split", expect.anything());
+  });
+
   it("拉取失败时退回只显示动作名，不留下空提示", async () => {
     vi.mocked(invoke).mockRejectedValue(new Error("ipc down"));
     render(<WindowControls />);

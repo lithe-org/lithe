@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   captureControlTarget,
   minimizeForeground,
+  showPopup,
   toggleMaximize,
   toggleTopmost,
 } from "../lib/api";
@@ -28,6 +29,14 @@ const ACTIONS: Record<string, () => Promise<unknown>> = {
   maximize: toggleMaximize,
   minimize: minimizeForeground,
 };
+
+function openSplitMenu(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  void showPopup(
+    { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+    "split",
+  );
+}
 
 export function WindowControls() {
   const [target, setTarget] = useState<ForegroundApp | null>(null);
@@ -55,7 +64,11 @@ export function WindowControls() {
           key={id}
           // 按下即记录目标：点击时前台窗口可能已经变化。
           onMouseDown={() => void captureTarget()}
-          onClick={() => {
+          onClick={(event) => {
+            if (id === "split") {
+              openSplitMenu(event.currentTarget);
+              return;
+            }
             const action = ACTIONS[id];
             if (action) {
               void action();
