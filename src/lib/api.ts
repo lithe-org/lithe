@@ -36,6 +36,17 @@ export function getResourceUsage(): Promise<ResourceUsage> {
   return invoke<ResourceUsage>("get_resource_usage");
 }
 
+export interface WifiStatus {
+  available: boolean;
+  connected: boolean;
+  ssid: string;
+  signal: number;
+}
+
+export function getWifiStatus(): Promise<WifiStatus> {
+  return invoke<WifiStatus>("get_wifi_status");
+}
+
 /** 锚点是顶栏内的 CSS 逻辑坐标，Rust 侧按 DPI 换算成物理像素后再定位。 */
 export interface LogicalRect {
   x: number;

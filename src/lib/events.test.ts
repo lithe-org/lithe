@@ -10,7 +10,7 @@ beforeEach(() => {
 
 describe("系统事件订阅", () => {
   it("订阅 Rust 同名事件并把应用名与可控性写入 store，卸载时逐个解绑", async () => {
-    const unlisteners = [vi.fn(), vi.fn()];
+    const unlisteners = [vi.fn(), vi.fn(), vi.fn()];
     let handler: ((event: unknown) => void) | undefined;
     vi.mocked(listen).mockImplementation(async (eventName, callback) => {
       if (eventName === EVENTS.foregroundChanged) {
@@ -26,7 +26,7 @@ describe("系统事件订阅", () => {
       expect.any(Function),
     );
     expect(listen).toHaveBeenCalledWith(EVENTS.resourceTick, expect.any(Function));
-    expect(registered).toHaveLength(2);
+    expect(registered).toHaveLength(3);
 
     handler?.({
       payload: { name: "记事本", executable: "notepad.exe", controllable: true },
@@ -36,6 +36,33 @@ describe("系统事件订阅", () => {
 
     registered.forEach((fn) => fn());
     expect(useSystemStore.getState().foregroundApp).toBe("记事本");
+  });
+
+  it("Wi-Fi 状态变化写入 store，供图标决定显隐与强度", async () => {
+    let handler: ((event: unknown) => void) | undefined;
+    vi.mocked(listen).mockImplementation(async (eventName, callback) => {
+      if (eventName === EVENTS.wifiChanged) {
+        handler = callback as unknown as (event: unknown) => void;
+      }
+      return () => {};
+    });
+
+    await registerSystemEvents();
+    handler?.({
+      payload: {
+        available: true,
+        connected: true,
+        ssid: "Home",
+        signal: 72,
+      },
+    });
+
+    expect(useSystemStore.getState().wifi).toEqual({
+      available: true,
+      connected: true,
+      ssid: "Home",
+      signal: 72,
+    });
   });
 
   it("资源 tick 把 CPU 与内存百分比写入 store", async () => {

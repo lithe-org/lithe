@@ -1,5 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { ForegroundApp, ResourceUsage } from "./api";
+import type { ForegroundApp, ResourceUsage, WifiStatus } from "./api";
 import { useSystemStore } from "../stores/system";
 
 // 与 src-tauri/src/commands/mod.rs 的常量逐字一致，由 api.test.ts 校验漂移。
@@ -26,6 +26,9 @@ export function registerSystemEvents(): Promise<UnlistenFn[]> {
     listen<ResourceUsage>(EVENTS.resourceTick, (event) => {
       const { setResourceUsage } = useSystemStore.getState();
       setResourceUsage(event.payload.cpuPercent, event.payload.memoryPercent);
+    }),
+    listen<WifiStatus>(EVENTS.wifiChanged, (event) => {
+      useSystemStore.getState().patch({ wifi: event.payload });
     }),
   ]);
 }

@@ -8,7 +8,7 @@ export interface SystemSnapshot {
   time: string;
   cpuPercent: number;
   memoryPercent: number;
-  wifi: { connected: boolean; ssid: string; signal: number };
+  wifi: { available: boolean; connected: boolean; ssid: string; signal: number };
   volume: { level: number; muted: boolean };
   battery: { present: boolean; percent: number; charging: boolean };
 }
@@ -28,7 +28,7 @@ export const initialSystemSnapshot: SystemSnapshot = {
   time: "",
   cpuPercent: 0,
   memoryPercent: 0,
-  wifi: { connected: false, ssid: "", signal: 0 },
+  wifi: { available: false, connected: false, ssid: "", signal: 0 },
   volume: { level: 0, muted: false },
   battery: { present: false, percent: 0, charging: false },
 };

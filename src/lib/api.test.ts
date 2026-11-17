@@ -6,6 +6,7 @@ import {
   getForegroundApp,
   getResourceUsage,
   getSystemStatus,
+  getWifiStatus,
   hidePopup,
   showPopup,
 } from "./api";
@@ -15,6 +16,7 @@ const rustEvents = readFileSync("src-tauri/src/commands/mod.rs", "utf8");
 const rustCommands = readFileSync("src-tauri/src/commands/system.rs", "utf8");
 const rustPopupCommands = readFileSync("src-tauri/src/commands/popup.rs", "utf8");
 const rustResource = readFileSync("src-tauri/src/status/resource.rs", "utf8");
+const rustWifi = readFileSync("src-tauri/src/status/wifi.rs", "utf8");
 const rustWindowControl = readFileSync(
   "src-tauri/src/commands/window_control.rs",
   "utf8",
@@ -79,6 +81,21 @@ describe("前后端通信契约", () => {
     expect(usage).toEqual({ cpuPercent: 12.5, memoryPercent: 34 });
   });
 
+  it("getWifiStatus 读取 Rust 同名命令的驼峰字段", async () => {
+    vi.mocked(invoke).mockResolvedValue({
+      available: true,
+      connected: true,
+      ssid: "Home",
+      signal: 72,
+    });
+
+    const status = await getWifiStatus();
+
+    expect(invoke).toHaveBeenCalledWith("get_wifi_status");
+    expect(status.available).toBe(true);
+    expect(status.signal).toBe(72);
+  });
+
   it("applySplit 透传布局名，由 Rust 计算目标矩形", async () => {
     await applySplit("bottom-right");
     expect(invoke).toHaveBeenCalledWith("apply_split", {
@@ -96,6 +113,7 @@ describe("前后端通信契约", () => {
     expect(rustWindowControl).toContain("pub fn minimize_foreground()");
     expect(rustWindowControl).toContain("pub fn apply_split(");
     expect(rustResource).toContain("pub fn get_resource_usage()");
+    expect(rustWifi).toContain("pub fn get_wifi_status()");
   });
 
   it("前端事件名必须与 Rust 常量逐字一致，否则订阅永远收不到", () => {
