@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { initialSystemSnapshot, useSystemStore } from "../../stores/system";
 import {
   BatteryIcon,
   ClockDisplay,
@@ -8,6 +9,14 @@ import {
   VolumeIcon,
   WifiIcon,
 } from "./index";
+
+beforeEach(() => {
+  // 本文件测的是图标外壳，Wi-Fi 需要有适配器才会渲染。
+  useSystemStore.setState({
+    ...initialSystemSnapshot,
+    wifi: { available: true, connected: true, ssid: "Home", signal: 80 },
+  });
+});
 
 afterEach(() => cleanup());
 

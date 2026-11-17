@@ -1,7 +1,27 @@
-import { Wifi } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
+import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
-/** M3-01 先占位；M3-05 按连接状态与信号强度切换图标。 */
+/** PRD 5.4.2：无适配器隐藏；连接方式决定图标，信号强度用透明度表达。 */
 export function WifiIcon() {
-  return <StatusIcon icon={Wifi} label="Wi-Fi" testId="status-wifi" />;
+  const wifi = useSystemStore((state) => state.wifi);
+
+  if (!wifi.available) {
+    return null;
+  }
+
+  const opacity = wifi.connected ? Math.max(0.45, wifi.signal / 100) : 1;
+  const label = wifi.connected
+    ? `Wi-Fi：${wifi.ssid}（信号 ${wifi.signal}%）`
+    : "Wi-Fi 未连接";
+
+  return (
+    <span className="flex items-center" style={{ opacity }}>
+      <StatusIcon
+        icon={wifi.connected ? Wifi : WifiOff}
+        label={label}
+        testId="status-wifi"
+      />
+    </span>
+  );
 }
