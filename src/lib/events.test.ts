@@ -8,19 +8,25 @@ beforeEach(() => {
   useSystemStore.setState(initialSystemSnapshot);
 });
 
-describe("前台切换事件订阅", () => {
-  it("订阅 Rust 同名事件并把应用名写入 store，卸载时可解绑", async () => {
-    const unlisten = vi.fn();
+describe("系统事件订阅", () => {
+  it("订阅 Rust 同名事件并把应用名与可控性写入 store，卸载时逐个解绑", async () => {
+    const unlisteners = [vi.fn(), vi.fn()];
     let handler: ((event: unknown) => void) | undefined;
-    vi.mocked(listen).mockImplementation(async (_event, callback) => {
-      handler = callback as unknown as (event: unknown) => void;
-      return unlisten;
+    vi.mocked(listen).mockImplementation(async (eventName, callback) => {
+      if (eventName === EVENTS.foregroundChanged) {
+        handler = callback as unknown as (event: unknown) => void;
+      }
+      return unlisteners.shift() ?? (() => {});
     });
 
-    const unlisteners = await registerSystemEvents();
+    const registered = await registerSystemEvents();
 
-    expect(listen).toHaveBeenCalledWith(EVENTS.foregroundChanged, expect.any(Function));
-    expect(unlisteners).toHaveLength(1);
+    expect(listen).toHaveBeenCalledWith(
+      EVENTS.foregroundChanged,
+      expect.any(Function),
+    );
+    expect(listen).toHaveBeenCalledWith(EVENTS.resourceTick, expect.any(Function));
+    expect(registered).toHaveLength(2);
 
     handler?.({
       payload: { name: "记事本", executable: "notepad.exe", controllable: true },
@@ -28,7 +34,23 @@ describe("前台切换事件订阅", () => {
     expect(useSystemStore.getState().foregroundApp).toBe("记事本");
     expect(useSystemStore.getState().foregroundControllable).toBe(true);
 
-    unlisteners.forEach((fn) => fn());
-    expect(unlisten).toHaveBeenCalledTimes(1);
+    registered.forEach((fn) => fn());
+    expect(useSystemStore.getState().foregroundApp).toBe("记事本");
+  });
+
+  it("资源 tick 把 CPU 与内存百分比写入 store", async () => {
+    let handler: ((event: unknown) => void) | undefined;
+    vi.mocked(listen).mockImplementation(async (eventName, callback) => {
+      if (eventName === EVENTS.resourceTick) {
+        handler = callback as unknown as (event: unknown) => void;
+      }
+      return () => {};
+    });
+
+    await registerSystemEvents();
+    handler?.({ payload: { cpuPercent: 12.5, memoryPercent: 34 } });
+
+    expect(useSystemStore.getState().cpuPercent).toBe(12.5);
+    expect(useSystemStore.getState().memoryPercent).toBe(34);
   });
 });

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applySplit,
   getForegroundApp,
+  getResourceUsage,
   getSystemStatus,
   hidePopup,
   showPopup,
@@ -13,6 +14,7 @@ import { EVENTS } from "./events";
 const rustEvents = readFileSync("src-tauri/src/commands/mod.rs", "utf8");
 const rustCommands = readFileSync("src-tauri/src/commands/system.rs", "utf8");
 const rustPopupCommands = readFileSync("src-tauri/src/commands/popup.rs", "utf8");
+const rustResource = readFileSync("src-tauri/src/status/resource.rs", "utf8");
 const rustWindowControl = readFileSync(
   "src-tauri/src/commands/window_control.rs",
   "utf8",
@@ -68,6 +70,15 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledWith("hide_popup");
   });
 
+  it("getResourceUsage 读取 Rust 同名命令的驼峰字段", async () => {
+    vi.mocked(invoke).mockResolvedValue({ cpuPercent: 12.5, memoryPercent: 34 });
+
+    const usage = await getResourceUsage();
+
+    expect(invoke).toHaveBeenCalledWith("get_resource_usage");
+    expect(usage).toEqual({ cpuPercent: 12.5, memoryPercent: 34 });
+  });
+
   it("applySplit 透传布局名，由 Rust 计算目标矩形", async () => {
     await applySplit("bottom-right");
     expect(invoke).toHaveBeenCalledWith("apply_split", {
@@ -84,6 +95,7 @@ describe("前后端通信契约", () => {
     expect(rustWindowControl).toContain("pub fn toggle_maximize()");
     expect(rustWindowControl).toContain("pub fn minimize_foreground()");
     expect(rustWindowControl).toContain("pub fn apply_split(");
+    expect(rustResource).toContain("pub fn get_resource_usage()");
   });
 
   it("前端事件名必须与 Rust 常量逐字一致，否则订阅永远收不到", () => {

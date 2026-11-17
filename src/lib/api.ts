@@ -27,6 +27,15 @@ export function getSystemStatus(): Promise<SystemStatus> {
   return invoke<SystemStatus>("get_system_status");
 }
 
+export interface ResourceUsage {
+  cpuPercent: number;
+  memoryPercent: number;
+}
+
+export function getResourceUsage(): Promise<ResourceUsage> {
+  return invoke<ResourceUsage>("get_resource_usage");
+}
+
 /** 锚点是顶栏内的 CSS 逻辑坐标，Rust 侧按 DPI 换算成物理像素后再定位。 */
 export interface LogicalRect {
   x: number;
