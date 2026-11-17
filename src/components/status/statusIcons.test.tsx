@@ -61,7 +61,7 @@ describe("右侧状态图标", () => {
     }
   });
 
-  it("资源图标先显示占位百分比，真实数值由 M3-03 接入", () => {
+  it("无采集数据时资源图标显示 0% 0%", () => {
     render(<StatusRow />);
     expect(screen.getByTestId("resource-values").textContent).toBe("0% 0%");
   });

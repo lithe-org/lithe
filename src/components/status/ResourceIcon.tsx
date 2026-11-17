@@ -1,12 +1,22 @@
 import { Activity } from "lucide-react";
+import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
-/** M3-01 先占位；M3-03 接入 CPU 与内存 percentage。 */
+/** PRD 5.4.2：默认显示 CPU 与内存百分比，用户设置项开关留到 M5。 */
 export function ResourceIcon() {
+  const cpuPercent = useSystemStore((state) => state.cpuPercent);
+  const memoryPercent = useSystemStore((state) => state.memoryPercent);
+  const cpu = Math.round(cpuPercent);
+  const memory = Math.round(memoryPercent);
+
   return (
-    <StatusIcon icon={Activity} label="资源监控" testId="status-resource">
+    <StatusIcon
+      icon={Activity}
+      label={`CPU ${cpu}%，内存 ${memory}%`}
+      testId="status-resource"
+    >
       <span className="text-[11px] tabular-nums" data-testid="resource-values">
-        0% 0%
+        {cpu}% {memory}%
       </span>
     </StatusIcon>
   );
