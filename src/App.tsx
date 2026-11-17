@@ -3,6 +3,14 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PopupHost } from "./components/PopupHost";
 import { WindowControls } from "./components/WindowControls";
+import {
+  BatteryIcon,
+  ClockDisplay,
+  NotificationIcon,
+  ResourceIcon,
+  VolumeIcon,
+  WifiIcon,
+} from "./components/status";
 import { WindowsLogo } from "./components/WindowsLogo";
 import { getForegroundApp, showPopup } from "./lib/api";
 import { isPopupLabel } from "./lib/windowRole";
@@ -119,9 +127,12 @@ function StatusBar() {
         className="flex items-center justify-end gap-[var(--lithe-icon-gap)]"
         data-testid="zone-right"
       >
-        <time className="tabular-nums" data-testid="clock">
-          {time || "--:--"}
-        </time>
+        <ResourceIcon />
+        <WifiIcon />
+        <VolumeIcon />
+        <BatteryIcon />
+        <NotificationIcon />
+        <ClockDisplay time={time} />
       </section>
     </div>
   );
