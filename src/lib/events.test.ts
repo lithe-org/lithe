@@ -10,7 +10,7 @@ beforeEach(() => {
 
 describe("系统事件订阅", () => {
   it("订阅 Rust 同名事件并把应用名与可控性写入 store，卸载时逐个解绑", async () => {
-    const unlisteners = [vi.fn(), vi.fn(), vi.fn(), vi.fn()];
+    const unlisteners = [vi.fn(), vi.fn(), vi.fn(), vi.fn(), vi.fn()];
     let handler: ((event: unknown) => void) | undefined;
     vi.mocked(listen).mockImplementation(async (eventName, callback) => {
       if (eventName === EVENTS.foregroundChanged) {
@@ -26,7 +26,7 @@ describe("系统事件订阅", () => {
       expect.any(Function),
     );
     expect(listen).toHaveBeenCalledWith(EVENTS.resourceTick, expect.any(Function));
-    expect(registered).toHaveLength(4);
+    expect(registered).toHaveLength(5);
 
     handler?.({
       payload: { name: "记事本", executable: "notepad.exe", controllable: true },
@@ -78,6 +78,29 @@ describe("系统事件订阅", () => {
     handler?.({ payload: { level: 42, muted: true } });
 
     expect(useSystemStore.getState().volume).toEqual({ level: 42, muted: true });
+  });
+
+  it("电池状态变化写入 store，台式机按无电池处理", async () => {
+    let handler: ((event: unknown) => void) | undefined;
+    vi.mocked(listen).mockImplementation(async (eventName, callback) => {
+      if (eventName === EVENTS.batteryChanged) {
+        handler = callback as unknown as (event: unknown) => void;
+      }
+      return () => {};
+    });
+
+    await registerSystemEvents();
+    handler?.({
+      payload: { present: true, percent: 88, charging: true },
+    });
+    expect(useSystemStore.getState().battery).toEqual({
+      present: true,
+      percent: 88,
+      charging: true,
+    });
+
+    handler?.({ payload: { present: false, percent: 0, charging: false } });
+    expect(useSystemStore.getState().battery.present).toBe(false);
   });
 
   it("资源 tick 把 CPU 与内存百分比写入 store", async () => {

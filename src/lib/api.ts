@@ -64,6 +64,16 @@ export function toggleMute(): Promise<void> {
   return invoke("toggle_mute");
 }
 
+export interface BatteryStatus {
+  present: boolean;
+  percent: number;
+  charging: boolean;
+}
+
+export function getBatteryStatus(): Promise<BatteryStatus> {
+  return invoke<BatteryStatus>("get_battery_status");
+}
+
 /** 锚点是顶栏内的 CSS 逻辑坐标，Rust 侧按 DPI 换算成物理像素后再定位。 */
 export interface LogicalRect {
   x: number;

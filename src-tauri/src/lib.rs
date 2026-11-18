@@ -31,7 +31,8 @@ pub fn run() {
             commands::window_control::toggle_topmost,
             status::audio::get_volume,
             status::audio::set_volume,
-            status::audio::toggle_mute
+            status::audio::toggle_mute,
+            status::battery::get_battery_status
         ])
         .setup(|app| {
             // 监听在独立线程跑消息循环，不阻塞状态栏启动。
@@ -39,6 +40,7 @@ pub fn run() {
             status::resource::start(app.handle().clone());
             status::wifi::start(app.handle().clone());
             status::audio::start(app.handle().clone());
+            status::battery::start(app.handle().clone());
             window::configure(app)?;
             // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
             app.manage(window::popup_pool::PopupPool::new(app.handle())?);

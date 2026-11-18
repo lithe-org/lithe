@@ -1,5 +1,6 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  BatteryStatus,
   ForegroundApp,
   ResourceUsage,
   VolumeStatus,
@@ -37,6 +38,9 @@ export function registerSystemEvents(): Promise<UnlistenFn[]> {
     }),
     listen<VolumeStatus>(EVENTS.volumeChanged, (event) => {
       useSystemStore.getState().patch({ volume: event.payload });
+    }),
+    listen<BatteryStatus>(EVENTS.batteryChanged, (event) => {
+      useSystemStore.getState().patch({ battery: event.payload });
     }),
   ]);
 }
