@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 const POOL_SIZE: usize = 2;
-const POPUP_WIDTH: f64 = 320.0;
+pub const POPUP_WIDTH: f64 = 320.0;
 const POPUP_HEIGHT: f64 = 400.0;
 
 /// 与 UI 无关的槽位管理，便于脱离桌面环境验证「取出 / 归还 / 空池」语义。

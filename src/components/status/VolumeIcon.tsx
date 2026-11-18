@@ -1,5 +1,6 @@
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
@@ -25,6 +26,7 @@ export function VolumeIcon() {
     <StatusIcon
       icon={Icon}
       label={volume.muted ? "音量已静音" : `音量 ${volume.level}%`}
+      onClick={(event) => openControlCenter(event.currentTarget, "volume")}
       testId="status-volume"
     />
   );

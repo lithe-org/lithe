@@ -93,6 +93,7 @@ mod tests {
         assert!(handler.contains("get_system_status"));
         assert!(handler.contains("show_popup"));
         assert!(handler.contains("hide_popup"));
+        assert!(handler.contains("resize_popup"));
         assert!(handler.contains("capture_control_target"));
         assert!(handler.contains("is_controllable_foreground"));
         assert!(handler.contains("toggle_topmost"));

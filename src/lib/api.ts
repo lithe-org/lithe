@@ -84,8 +84,16 @@ export interface LogicalRect {
 
 export type PopupKind = "logo" | "control-center" | "split";
 
-export function showPopup(anchor: LogicalRect, kind: PopupKind): Promise<void> {
-  return invoke("show_popup", { anchor, kind });
+export function showPopup(
+  anchor: LogicalRect,
+  kind: PopupKind,
+  focus?: string,
+): Promise<void> {
+  return invoke("show_popup", { anchor, kind, focus: focus ?? null });
+}
+
+export function resizePopup(height: number): Promise<void> {
+  return invoke("resize_popup", { height });
 }
 
 export function hidePopup(): Promise<void> {

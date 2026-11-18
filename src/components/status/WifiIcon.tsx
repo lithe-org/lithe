@@ -1,4 +1,5 @@
 import { Wifi, WifiOff } from "lucide-react";
+import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
@@ -20,6 +21,7 @@ export function WifiIcon() {
       <StatusIcon
         icon={wifi.connected ? Wifi : WifiOff}
         label={label}
+        onClick={(event) => openControlCenter(event.currentTarget, "network")}
         testId="status-wifi"
       />
     </span>

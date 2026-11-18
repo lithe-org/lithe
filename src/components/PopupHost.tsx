@@ -2,18 +2,27 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { EVENTS } from "../lib/events";
+import type { ControlModule } from "../lib/panels";
+import { ControlCenter } from "./menus/ControlCenter";
 import { LogoMenu } from "./menus/LogoMenu";
 import { SplitMenu } from "./menus/SplitMenu";
 
 /** 下拉窗口的宿主容器；M2-04 起按事件注入 Logo 菜单等面板内容。 */
 export function PopupHost() {
   const [kind, setKind] = useState<string | null>(null);
+  const [focus, setFocus] = useState<ControlModule | undefined>(undefined);
 
   useEffect(() => {
     // 池中窗口复用，内容类型由 Rust 在每次 show 时注入。
     let cancelled = false;
     let unlisten: UnlistenFn | undefined;
-    listen<{ kind: string }>(EVENTS.popupShow, (event) => setKind(event.payload.kind))
+    listen<{ kind: string; focus?: ControlModule }>(
+      EVENTS.popupShow,
+      (event) => {
+        setKind(event.payload.kind);
+        setFocus(event.payload.focus);
+      },
+    )
       .then((fn) => {
         if (cancelled) {
           fn();
@@ -47,6 +56,7 @@ export function PopupHost() {
       data-testid="popup-host"
     >
       {kind === "logo" ? <LogoMenu /> : null}
+      {kind === "control-center" ? <ControlCenter focus={focus} /> : null}
       {kind === "split" ? <SplitMenu /> : null}
     </div>
   );

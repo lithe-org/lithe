@@ -11,6 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::popup::hide_popup,
+            commands::popup::resize_popup,
             commands::popup::show_popup,
             commands::power::lock_workstation,
             commands::power::open_system_info,

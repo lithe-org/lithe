@@ -1,4 +1,5 @@
 import { Activity } from "lucide-react";
+import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
@@ -13,6 +14,7 @@ export function ResourceIcon() {
     <StatusIcon
       icon={Activity}
       label={`CPU ${cpu}%，内存 ${memory}%`}
+      onClick={(event) => openControlCenter(event.currentTarget, "resource")}
       testId="status-resource"
     >
       <span className="text-[11px] tabular-nums" data-testid="resource-values">

@@ -12,6 +12,7 @@ import {
   toggleMute,
   getWifiStatus,
   hidePopup,
+  resizePopup,
   showPopup,
 } from "./api";
 import { EVENTS } from "./events";
@@ -72,7 +73,11 @@ describe("前后端通信契约", () => {
     const anchor = { x: 12, y: 0, width: 20, height: 30 };
 
     await showPopup(anchor, "logo");
-    expect(invoke).toHaveBeenCalledWith("show_popup", { anchor, kind: "logo" });
+    expect(invoke).toHaveBeenCalledWith("show_popup", {
+      anchor,
+      kind: "logo",
+      focus: null,
+    });
 
     await hidePopup();
     expect(invoke).toHaveBeenCalledWith("hide_popup");
@@ -115,6 +120,11 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledWith("toggle_mute");
   });
 
+  it("resizePopup 按内容高度调整面板，宽度由 Rust 固定", async () => {
+    await resizePopup(320);
+    expect(invoke).toHaveBeenCalledWith("resize_popup", { height: 320 });
+  });
+
   it("getBatteryStatus 读取 Rust 同名命令的驼峰字段", async () => {
     vi.mocked(invoke).mockResolvedValue({
       present: true,
@@ -142,6 +152,7 @@ describe("前后端通信契约", () => {
     expect(rustCommands).toContain("pub fn get_system_status()");
     expect(rustPopupCommands).toContain("pub fn show_popup(");
     expect(rustPopupCommands).toContain("pub fn hide_popup(");
+    expect(rustPopupCommands).toContain("pub fn resize_popup(");
     expect(rustWindowControl).toContain("pub fn toggle_topmost()");
     expect(rustWindowControl).toContain("pub fn toggle_maximize()");
     expect(rustWindowControl).toContain("pub fn minimize_foreground()");

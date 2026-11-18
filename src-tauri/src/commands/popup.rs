@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, State, WebviewWindow};
+use tauri::{AppHandle, Emitter, PhysicalPosition, PhysicalSize, State, WebviewWindow};
 
 use crate::commands::EVENT_POPUP_SHOW;
 use crate::window::placement::{place_popup, LogicalRect, Rect};
@@ -11,6 +11,8 @@ const POPUP_GAP: i32 = 4;
 #[serde(rename_all = "camelCase")]
 struct PopupShowPayload {
     kind: String,
+    /// 控制中心打开时要聚焦的模块（network / volume / battery / resource / theme）。
+    focus: Option<String>,
 }
 
 #[tauri::command]
@@ -20,6 +22,7 @@ pub fn show_popup(
     pool: State<'_, PopupPool>,
     anchor: LogicalRect,
     kind: String,
+    focus: Option<String>,
 ) -> Result<(), String> {
     // 顶栏位于 (0,0)，逻辑锚点乘 scale 即屏幕物理坐标；M4 多屏时再补显示器偏移。
     let scale = window.scale_factor().map_err(|error| error.to_string())?;
@@ -47,7 +50,10 @@ pub fn show_popup(
     popup.show().map_err(|error| error.to_string())?;
     // 池中页面上电即加载，先显示再注入内容不会丢事件。
     popup
-        .emit(EVENT_POPUP_SHOW, PopupShowPayload { kind })
+        .emit(
+            EVENT_POPUP_SHOW,
+            PopupShowPayload { kind, focus },
+        )
         .map_err(|error| error.to_string())?;
     popup.set_focus().map_err(|error| error.to_string())?;
     Ok(())
@@ -56,6 +62,17 @@ pub fn show_popup(
 #[tauri::command]
 pub fn hide_popup(pool: State<'_, PopupPool>, window: WebviewWindow) {
     pool.release(window);
+}
+
+#[tauri::command]
+pub fn resize_popup(window: WebviewWindow, height: u32) -> Result<(), String> {
+    // 宽度由窗口池固定，只按内容调整高度；调用方就是当前下拉窗口。
+    window
+        .set_size(PhysicalSize::new(
+            crate::window::popup_pool::POPUP_WIDTH as u32,
+            height.max(80),
+        ))
+        .map_err(|error| error.to_string())
 }
 
 fn screen_rect(app: &AppHandle) -> Option<Rect> {

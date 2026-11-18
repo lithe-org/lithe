@@ -68,6 +68,7 @@ describe("中段窗口控制按钮组", () => {
     expect(invoke).toHaveBeenCalledWith("show_popup", {
       anchor: { x: 0, y: 0, width: 0, height: 0 },
       kind: "split",
+      focus: null,
     });
     expect(invoke).not.toHaveBeenCalledWith("apply_split", expect.anything());
   });

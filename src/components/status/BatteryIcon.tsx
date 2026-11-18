@@ -6,6 +6,7 @@ import {
   BatteryWarning,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
@@ -43,6 +44,7 @@ export function BatteryIcon() {
           ? `电池充电中 ${battery.percent}%`
           : `电池 ${battery.percent}%`
       }
+      onClick={(event) => openControlCenter(event.currentTarget, "battery")}
       testId="status-battery"
     />
   );

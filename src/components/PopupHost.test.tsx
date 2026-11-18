@@ -44,6 +44,24 @@ describe("下拉窗口宿主", () => {
     expect(screen.getByTestId("logo-menu")).not.toBeNull();
   });
 
+  it("收到 control-center 注入后渲染控制中心面板", async () => {
+    let handler: ((event: unknown) => void) | undefined;
+    vi.mocked(listen).mockImplementation(async (_event, callback) => {
+      handler = callback as unknown as (event: unknown) => void;
+      return () => {};
+    });
+
+    await act(async () => {
+      render(<PopupHost />);
+    });
+    await act(async () => {
+      handler?.({ payload: { kind: "control-center", focus: "network" } });
+    });
+
+    expect(screen.getByTestId("control-center")).not.toBeNull();
+    expect(screen.getByTestId("control-module-network")).not.toBeNull();
+  });
+
   it("按 Esc 调用 hide_popup 收起面板", () => {
     render(<PopupHost />);
     fireEvent.keyDown(window, { key: "Escape" });
