@@ -94,6 +94,8 @@ mod tests {
         assert!(handler.contains("show_popup"));
         assert!(handler.contains("hide_popup"));
         assert!(handler.contains("resize_popup"));
+        assert!(handler.contains("close_popup"));
+        assert!(handler.contains("open_notification_center"));
         assert!(handler.contains("capture_control_target"));
         assert!(handler.contains("is_controllable_foreground"));
         assert!(handler.contains("toggle_topmost"));

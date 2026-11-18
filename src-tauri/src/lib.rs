@@ -10,6 +10,8 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            commands::notification::open_notification_center,
+            commands::popup::close_popup,
             commands::popup::hide_popup,
             commands::popup::resize_popup,
             commands::popup::show_popup,

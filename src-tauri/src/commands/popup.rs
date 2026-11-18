@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, PhysicalPosition, PhysicalSize, State, WebviewWi
 
 use crate::commands::EVENT_POPUP_SHOW;
 use crate::window::placement::{place_popup, LogicalRect, Rect};
-use crate::window::popup_pool::PopupPool;
+use crate::window::popup_pool::{PopupPool, POPUP_LABEL_PREFIX};
 
 const POPUP_GAP: i32 = 4;
 
@@ -61,7 +61,16 @@ pub fn show_popup(
 
 #[tauri::command]
 pub fn hide_popup(pool: State<'_, PopupPool>, window: WebviewWindow) {
+    // 只允许下拉窗口自释放；顶栏误调会把自己的窗口塞回池里。
+    if !window.label().starts_with(POPUP_LABEL_PREFIX) {
+        return;
+    }
     pool.release(window);
+}
+
+#[tauri::command]
+pub fn close_popup(pool: State<'_, PopupPool>) -> usize {
+    pool.close_active()
 }
 
 #[tauri::command]

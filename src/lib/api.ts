@@ -107,6 +107,15 @@ export function resizePopup(height: number): Promise<void> {
   return invoke("resize_popup", { height });
 }
 
+/** 收起所有正在显示的下拉面板，返回被收起的数量。 */
+export function closePopup(): Promise<number> {
+  return invoke<number>("close_popup");
+}
+
+export function openNotificationCenter(): Promise<void> {
+  return invoke("open_notification_center");
+}
+
 export function hidePopup(): Promise<void> {
   return invoke("hide_popup");
 }

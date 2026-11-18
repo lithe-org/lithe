@@ -1,3 +1,4 @@
+pub mod notification;
 pub mod popup;
 pub mod power;
 pub mod system;

@@ -3,6 +3,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 
 const POOL_SIZE: usize = 2;
 pub const POPUP_WIDTH: f64 = 320.0;
+pub const POPUP_LABEL_PREFIX: &str = "popup-";
 const POPUP_HEIGHT: f64 = 400.0;
 
 /// 与 UI 无关的槽位管理，便于脱离桌面环境验证「取出 / 归还 / 空池」语义。
@@ -42,6 +43,8 @@ impl<T> PopupSlots<T> {
 /// 下拉窗口池：启动时预创建，点击时复用，避免每次新建 WebView 的明显延迟。
 pub struct PopupPool {
     slots: PopupSlots<WebviewWindow>,
+    /// 正在显示的面板；顶栏点通知/时间时需要显式收起它们（顶栏不抢焦点，失焦事件不一定触发）。
+    active: Mutex<Vec<WebviewWindow>>,
 }
 
 impl PopupPool {
@@ -52,25 +55,47 @@ impl PopupPool {
         }
         Ok(Self {
             slots: PopupSlots::new(windows),
+            active: Mutex::new(Vec::new()),
         })
     }
 
     pub fn acquire(&self) -> Option<WebviewWindow> {
         // 只取窗口不显示：调用方先定位再 show，避免面板先闪到上一次的位置。
-        self.slots.acquire()
+        let window = self.slots.acquire()?;
+        if let Ok(mut active) = self.active.lock() {
+            active.push(window.clone());
+        }
+        Some(window)
     }
 
     pub fn release(&self, window: WebviewWindow) {
         let _ = window.hide();
+        if let Ok(mut active) = self.active.lock() {
+            active.retain(|item| item.label() != window.label());
+        }
         // 失焦与 Esc 可能连续触发同一窗口，按 label 去重避免重复入池。
         if !self.slots.contains(|idle| idle.label() == window.label()) {
             self.slots.release(window);
         }
     }
+
+    /// 收起所有正在显示的面板，返回被收起的数量。
+    pub fn close_active(&self) -> usize {
+        let windows = self
+            .active
+            .lock()
+            .map(|mut active| std::mem::take(&mut *active))
+            .unwrap_or_default();
+        let count = windows.len();
+        for window in windows {
+            self.release(window);
+        }
+        count
+    }
 }
 
 fn create_popup(app: &AppHandle, index: usize) -> tauri::Result<WebviewWindow> {
-    let label = format!("popup-{index}");
+    let label = format!("{POPUP_LABEL_PREFIX}{index}");
     let window = WebviewWindowBuilder::new(app, &label, WebviewUrl::App("index.html".into()))
         .title("Lithe Popup")
         .inner_size(POPUP_WIDTH, POPUP_HEIGHT)

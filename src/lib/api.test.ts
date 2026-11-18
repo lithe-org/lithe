@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applySplit,
+  closePopup,
   getBatteryStatus,
+  openNotificationCenter,
   getForegroundApp,
   getResourceUsage,
   getSystemStatus,
@@ -24,6 +26,10 @@ const rustResource = readFileSync("src-tauri/src/status/resource.rs", "utf8");
 const rustWifi = readFileSync("src-tauri/src/status/wifi.rs", "utf8");
 const rustAudio = readFileSync("src-tauri/src/status/audio.rs", "utf8");
 const rustBattery = readFileSync("src-tauri/src/status/battery.rs", "utf8");
+const rustNotification = readFileSync(
+  "src-tauri/src/commands/notification.rs",
+  "utf8",
+);
 const rustWindowControl = readFileSync(
   "src-tauri/src/commands/window_control.rs",
   "utf8",
@@ -120,6 +126,16 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledWith("toggle_mute");
   });
 
+  it("通知入口先收面板再发送 Win+N", async () => {
+    vi.mocked(invoke).mockResolvedValue(1);
+
+    expect(await closePopup()).toBe(1);
+    expect(invoke).toHaveBeenCalledWith("close_popup");
+
+    await openNotificationCenter();
+    expect(invoke).toHaveBeenCalledWith("open_notification_center");
+  });
+
   it("resizePopup 按内容高度调整面板，宽度由 Rust 固定", async () => {
     await resizePopup(320);
     expect(invoke).toHaveBeenCalledWith("resize_popup", { height: 320 });
@@ -153,6 +169,8 @@ describe("前后端通信契约", () => {
     expect(rustPopupCommands).toContain("pub fn show_popup(");
     expect(rustPopupCommands).toContain("pub fn hide_popup(");
     expect(rustPopupCommands).toContain("pub fn resize_popup(");
+    expect(rustPopupCommands).toContain("pub fn close_popup(");
+    expect(rustNotification).toContain("pub fn open_notification_center()");
     expect(rustWindowControl).toContain("pub fn toggle_topmost()");
     expect(rustWindowControl).toContain("pub fn toggle_maximize()");
     expect(rustWindowControl).toContain("pub fn minimize_foreground()");
