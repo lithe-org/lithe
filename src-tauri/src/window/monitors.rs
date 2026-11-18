@@ -30,7 +30,7 @@ impl Bounds {
         (self.bottom - self.top).max(0) as u32
     }
 
-    fn from_rect(rect: RECT) -> Self {
+    pub fn from_rect(rect: RECT) -> Self {
         Self {
             left: rect.left,
             top: rect.top,
