@@ -1,7 +1,10 @@
 import { useEffect, useRef } from "react";
 import { resizePopup } from "../../lib/api";
+import type { ReactElement } from "react";
 import type { ControlModule } from "../../lib/panels";
+import { BatteryPanel } from "./panels/BatteryPanel";
 import { NetworkPanel } from "./panels/NetworkPanel";
+import { VolumePanel } from "./panels/VolumePanel";
 
 const MODULES: { id: ControlModule; title: string; placeholder: string }[] = [
   { id: "network", title: "网络", placeholder: "Wi-Fi 连接与信号（M3-11 填充）" },
@@ -10,6 +13,13 @@ const MODULES: { id: ControlModule; title: string; placeholder: string }[] = [
   { id: "resource", title: "资源", placeholder: "CPU 与内存占用（后续填充）" },
   { id: "theme", title: "主题", placeholder: "亮色 / 暗色 / 跟随系统（M5 填充）" },
 ];
+
+/** 已实现的模块渲染真实内容，其余仍显示占位说明。 */
+const PANELS: Partial<Record<ControlModule, () => ReactElement>> = {
+  network: NetworkPanel,
+  volume: VolumePanel,
+  battery: BatteryPanel,
+};
 
 interface ControlCenterProps {
   focus?: ControlModule;
@@ -46,21 +56,24 @@ export function ControlCenter({ focus }: ControlCenterProps) {
       ref={viewportRef}
     >
       <div className="p-3" ref={contentRef}>
-        {MODULES.map((module) => (
-          <section
-            className="mb-3 rounded-[var(--lithe-radius)] bg-black/5 p-3"
-            data-module={module.id}
-            data-testid={`control-module-${module.id}`}
-            key={module.id}
-          >
-            <h3 className="mb-1 text-[12px] font-medium">{module.title}</h3>
-            {module.id === "network" ? (
-              <NetworkPanel />
-            ) : (
-              <p className="text-[11px] opacity-60">{module.placeholder}</p>
-            )}
-          </section>
-        ))}
+        {MODULES.map((module) => {
+          const Panel = PANELS[module.id];
+          return (
+            <section
+              className="mb-3 rounded-[var(--lithe-radius)] bg-black/5 p-3"
+              data-module={module.id}
+              data-testid={`control-module-${module.id}`}
+              key={module.id}
+            >
+              <h3 className="mb-1 text-[12px] font-medium">{module.title}</h3>
+              {Panel ? (
+                <Panel />
+              ) : (
+                <p className="text-[11px] opacity-60">{module.placeholder}</p>
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );
