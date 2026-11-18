@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { resizePopup } from "../../lib/api";
 import type { ControlModule } from "../../lib/panels";
+import { NetworkPanel } from "./panels/NetworkPanel";
 
 const MODULES: { id: ControlModule; title: string; placeholder: string }[] = [
   { id: "network", title: "网络", placeholder: "Wi-Fi 连接与信号（M3-11 填充）" },
@@ -53,7 +54,11 @@ export function ControlCenter({ focus }: ControlCenterProps) {
             key={module.id}
           >
             <h3 className="mb-1 text-[12px] font-medium">{module.title}</h3>
-            <p className="text-[11px] opacity-60">{module.placeholder}</p>
+            {module.id === "network" ? (
+              <NetworkPanel />
+            ) : (
+              <p className="text-[11px] opacity-60">{module.placeholder}</p>
+            )}
           </section>
         ))}
       </div>

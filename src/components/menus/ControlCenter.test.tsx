@@ -5,6 +5,8 @@ import { ControlCenter } from "./ControlCenter";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // 网络模块会拉取列表，默认给空数组避免未定义解引用。
+  vi.mocked(invoke).mockResolvedValue([]);
 });
 
 afterEach(() => cleanup());

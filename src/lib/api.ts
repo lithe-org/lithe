@@ -47,6 +47,17 @@ export function getWifiStatus(): Promise<WifiStatus> {
   return invoke<WifiStatus>("get_wifi_status");
 }
 
+export interface WifiNetwork {
+  ssid: string;
+  signal: number;
+  connected: boolean;
+  secure: boolean;
+}
+
+export function listWifiNetworks(): Promise<WifiNetwork[]> {
+  return invoke<WifiNetwork[]>("list_wifi_networks");
+}
+
 export interface VolumeStatus {
   level: number;
   muted: boolean;

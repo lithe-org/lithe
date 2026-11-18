@@ -5,9 +5,10 @@ use tauri::{AppHandle, Emitter};
 use windows_sys::Win32::Foundation::HANDLE;
 use windows_sys::Win32::NetworkManagement::WiFi::{
     wlan_intf_opcode_current_connection, wlan_interface_state_connected,
-    wlan_interface_state_disconnected, WlanCloseHandle,
-    WlanEnumInterfaces, WlanFreeMemory, WlanOpenHandle, WlanQueryInterface,
-    WLAN_CONNECTION_ATTRIBUTES, WLAN_INTERFACE_INFO_LIST,
+    wlan_interface_state_disconnected, WlanCloseHandle, WlanEnumInterfaces, WlanFreeMemory,
+    WlanGetAvailableNetworkList, WlanOpenHandle, WlanQueryInterface, WLAN_AVAILABLE_NETWORK,
+    WLAN_AVAILABLE_NETWORK_CONNECTED, WLAN_AVAILABLE_NETWORK_LIST, WLAN_CONNECTION_ATTRIBUTES,
+    WLAN_INTERFACE_INFO_LIST,
 };
 
 use crate::commands::EVENT_WIFI_CHANGED;
@@ -107,6 +108,84 @@ pub fn get_wifi_status() -> WifiStatus {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WifiNetwork {
+    pub ssid: String,
+    pub signal: u32,
+    pub connected: bool,
+    pub secure: bool,
+}
+
+/// SSID 在 dot11Ssid 里是 UTF-8 字节数组，长度由 uSSIDLength 给出。
+pub fn parse_network(network: &WLAN_AVAILABLE_NETWORK) -> WifiNetwork {
+    let length = (network.dot11Ssid.uSSIDLength as usize).min(network.dot11Ssid.ucSSID.len());
+    WifiNetwork {
+        ssid: String::from_utf8_lossy(&network.dot11Ssid.ucSSID[..length]).to_string(),
+        signal: clamp_signal(network.wlanSignalQuality),
+        connected: network.dwFlags & WLAN_AVAILABLE_NETWORK_CONNECTED != 0,
+        secure: network.bSecurityEnabled != 0,
+    }
+}
+
+/// 已连接的排最前，其次按信号强度降序，同名网络再按名称稳定排序。
+pub fn sort_networks(mut networks: Vec<WifiNetwork>) -> Vec<WifiNetwork> {
+    networks.sort_by(|a, b| {
+        b.connected
+            .cmp(&a.connected)
+            .then(b.signal.cmp(&a.signal))
+            .then(a.ssid.cmp(&b.ssid))
+    });
+    networks
+}
+
+#[tauri::command]
+pub fn list_wifi_networks() -> Result<Vec<WifiNetwork>, String> {
+    unsafe {
+        let mut negotiated = 0u32;
+        let mut handle: HANDLE = std::ptr::null_mut();
+        if WlanOpenHandle(2, std::ptr::null(), &mut negotiated, &mut handle) != 0 {
+            return Err("无法访问 WLAN 服务".to_string());
+        }
+
+        let mut interfaces: *mut WLAN_INTERFACE_INFO_LIST = std::ptr::null_mut();
+        if WlanEnumInterfaces(handle, std::ptr::null(), &mut interfaces) != 0 {
+            WlanCloseHandle(handle, std::ptr::null());
+            return Err("枚举 WLAN 接口失败".to_string());
+        }
+
+        let mut networks = Vec::new();
+        if !interfaces.is_null() && (*interfaces).dwNumberOfItems > 0 {
+            let interface = (*interfaces).InterfaceInfo.as_ptr();
+            let mut list: *mut WLAN_AVAILABLE_NETWORK_LIST = std::ptr::null_mut();
+            let ok = WlanGetAvailableNetworkList(
+                handle,
+                &(*interface).InterfaceGuid,
+                0,
+                std::ptr::null(),
+                &mut list,
+            );
+            if ok == 0 && !list.is_null() {
+                let count = (*list).dwNumberOfItems as usize;
+                let items = (*list).Network.as_ptr();
+                for index in 0..count {
+                    networks.push(parse_network(&*items.add(index)));
+                }
+                WlanFreeMemory(list as *const c_void);
+            }
+        }
+
+        if !interfaces.is_null() {
+            WlanFreeMemory(interfaces as *const c_void);
+        }
+        WlanCloseHandle(handle, std::ptr::null());
+
+        // 隐藏网络没有 SSID，列表里留白无法识别，先过滤掉。
+        networks.retain(|network| !network.ssid.is_empty());
+        Ok(sort_networks(networks))
+    }
+}
+
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
         let mut previous = WifiStatus::unavailable();
@@ -166,5 +245,56 @@ mod tests {
     fn clamp_signal_caps_out_of_range_values() {
         assert_eq!(clamp_signal(120), 100);
         assert_eq!(clamp_signal(45), 45);
+    }
+
+    #[test]
+    fn parse_network_reads_ssid_signal_and_flags() {
+        let mut network: WLAN_AVAILABLE_NETWORK = unsafe { std::mem::zeroed() };
+        let ssid = b"Home";
+        network.dot11Ssid.uSSIDLength = ssid.len() as u32;
+        network.dot11Ssid.ucSSID[..ssid.len()].copy_from_slice(ssid);
+        network.wlanSignalQuality = 72;
+        network.dwFlags = WLAN_AVAILABLE_NETWORK_CONNECTED;
+        network.bSecurityEnabled = 1;
+
+        assert_eq!(
+            parse_network(&network),
+            WifiNetwork {
+                ssid: "Home".to_string(),
+                signal: 72,
+                connected: true,
+                secure: true,
+            }
+        );
+    }
+
+    #[test]
+    fn sort_puts_connected_first_then_strongest_signal() {
+        let networks = vec![
+            WifiNetwork {
+                ssid: "weak".to_string(),
+                signal: 20,
+                connected: false,
+                secure: false,
+            },
+            WifiNetwork {
+                ssid: "connected".to_string(),
+                signal: 10,
+                connected: true,
+                secure: true,
+            },
+            WifiNetwork {
+                ssid: "strong".to_string(),
+                signal: 90,
+                connected: false,
+                secure: true,
+            },
+        ];
+
+        let ssids: Vec<_> = sort_networks(networks)
+            .into_iter()
+            .map(|network| network.ssid)
+            .collect();
+        assert_eq!(ssids, vec!["connected", "strong", "weak"]);
     }
 }
