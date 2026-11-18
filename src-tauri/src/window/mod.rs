@@ -101,7 +101,7 @@ fn create_bar_window(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindo
 
 fn configure_bar(window: &WebviewWindow, display: &Display) -> Result<(), String> {
     let width = display.bounds.width();
-    let height = physical_bar_height(monitors::scale_factor(display.handle));
+    let height = bar_height_from_dpi(monitors::dpi_for(display.handle));
     let origin_x = display.bounds.left;
     let origin_y = display.bounds.top;
 
@@ -149,6 +149,11 @@ fn pin_position(window: &WebviewWindow, x: i32, y: i32) {
 /// CSS 的 30px 是逻辑像素，物理高度必须乘该屏 DPI，否则高缩放下内容被裁切。
 pub fn physical_bar_height(scale: f64) -> u32 {
     (BAR_HEIGHT as f64 * scale).round() as u32
+}
+
+/// 从某块屏的原始 DPI 直接得到物理条高，把「每屏独立计算」钉成可测纯函数。
+pub fn bar_height_from_dpi(dpi: u32) -> u32 {
+    physical_bar_height(monitors::scale_from_dpi(dpi))
 }
 
 fn set_no_activate(window: &WebviewWindow) {
@@ -206,6 +211,14 @@ mod tests {
         assert_eq!(physical_bar_height(1.0), 30);
         assert_eq!(physical_bar_height(1.25), 38);
         assert_eq!(physical_bar_height(1.5), 45);
+    }
+
+    #[test]
+    fn bar_height_comes_from_each_monitors_own_dpi() {
+        // 主屏 96 DPI → 30px，副屏 144 DPI → 45px；不能共用主屏的 DPI。
+        assert_eq!(bar_height_from_dpi(96), 30);
+        assert_eq!(bar_height_from_dpi(120), 38);
+        assert_eq!(bar_height_from_dpi(144), 45);
     }
 
     #[test]

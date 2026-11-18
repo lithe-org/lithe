@@ -99,7 +99,7 @@ pub fn scale_from_dpi(dpi: u32) -> f64 {
 }
 
 /// 每块屏各自取有效 DPI，混合 DPI 下不能沿用主屏的缩放值。
-pub fn scale_factor(handle: isize) -> f64 {
+pub fn dpi_for(handle: isize) -> u32 {
     let mut dpi_x = 0u32;
     let mut dpi_y = 0u32;
     let hr = unsafe {
@@ -111,10 +111,14 @@ pub fn scale_factor(handle: isize) -> f64 {
         )
     };
     if hr == 0 && dpi_x > 0 {
-        scale_from_dpi(dpi_x)
+        dpi_x
     } else {
-        1.0
+        96
     }
+}
+
+pub fn scale_factor(handle: isize) -> f64 {
+    scale_from_dpi(dpi_for(handle))
 }
 
 #[cfg(test)]

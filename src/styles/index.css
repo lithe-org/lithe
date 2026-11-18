@@ -3,7 +3,9 @@
 @source "../";
 
 /* PRD 6.5 基线：高度 28~36（默认 30）、内边距 12、图标 16、间距 8~10、字号 12~13、圆角 6~8。
-   数值由 tokens.test.ts 钉住，改动需同步修改区间断言。 */
+   数值由 tokens.test.ts 钉住，改动需同步修改区间断言。
+   这些 px 是 CSS 逻辑像素：每个顶栏窗口由 WebView 按所在显示器 DPI 自动缩放，
+   Rust 侧另外按该屏 DPI 换算窗口物理高度，混合 DPI 下两块屏视觉尺寸一致。 */
 :root {
   --lithe-bar-height: 30px;
   --lithe-bar-padding-x: 12px;
