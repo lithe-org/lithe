@@ -1,4 +1,12 @@
-use windows_sys::Win32::Foundation::{LPARAM, RECT};
+use std::sync::mpsc::{self, Sender};
+use std::sync::Mutex;
+use tauri::AppHandle;
+use windows_sys::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
+use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
+use windows_sys::Win32::UI::WindowsAndMessaging::{
+    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, HWND_MESSAGE, RegisterClassW,
+    TranslateMessage, MSG, WNDCLASSW, WM_DISPLAYCHANGE,
+};
 use windows_sys::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO,
 };
@@ -119,6 +127,84 @@ pub fn dpi_for(handle: isize) -> u32 {
 
 pub fn scale_factor(handle: isize) -> f64 {
     scale_from_dpi(dpi_for(handle))
+}
+
+/// 隐藏的消息窗口把 WM_DISPLAYCHANGE 转成 channel 信号。
+static CHANGE_SENDER: Mutex<Option<Sender<()>>> = Mutex::new(None);
+
+pub fn watch(app: AppHandle) {
+    let (sender, receiver) = mpsc::channel();
+    if let Ok(mut current) = CHANGE_SENDER.lock() {
+        *current = Some(sender);
+    }
+
+    std::thread::spawn(|| unsafe { run_watcher_loop() });
+    std::thread::spawn(move || {
+        while receiver.recv().is_ok() {
+            let handle = app.clone();
+            // 窗口的创建与销毁必须在主线程做。
+            let _ = app.run_on_main_thread(move || {
+                let _ = crate::window::resync_displays(&handle);
+            });
+        }
+    });
+}
+
+unsafe extern "system" fn watcher_proc(
+    hwnd: HWND,
+    message: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
+    if message == WM_DISPLAYCHANGE {
+        if let Ok(sender) = CHANGE_SENDER.lock() {
+            if let Some(tx) = sender.as_ref() {
+                let _ = tx.send(());
+            }
+        }
+    }
+    unsafe { DefWindowProcW(hwnd, message, wparam, lparam) }
+}
+
+unsafe fn run_watcher_loop() {
+    let class_name: Vec<u16> = "LitheDisplayWatcher\0".encode_utf16().collect();
+    let instance: HINSTANCE = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let mut class: WNDCLASSW = unsafe { std::mem::zeroed() };
+    class.lpfnWndProc = Some(watcher_proc);
+    class.hInstance = instance;
+    class.lpszClassName = class_name.as_ptr();
+    if unsafe { RegisterClassW(&class) } == 0 {
+        return;
+    }
+
+    // message-only 窗口不出现在屏幕上，只接收 WM_DISPLAYCHANGE 广播。
+    let hwnd = unsafe {
+        CreateWindowExW(
+            0,
+            class_name.as_ptr(),
+            std::ptr::null(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            HWND_MESSAGE,
+            std::ptr::null_mut(),
+            instance,
+            std::ptr::null(),
+        )
+    };
+    if hwnd.is_null() {
+        return;
+    }
+
+    let mut message: MSG = unsafe { std::mem::zeroed() };
+    while unsafe { GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) } > 0 {
+        unsafe {
+            TranslateMessage(&message);
+            DispatchMessageW(&message);
+        }
+    }
 }
 
 #[cfg(test)]

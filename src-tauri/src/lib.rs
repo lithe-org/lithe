@@ -46,6 +46,8 @@ pub fn run() {
             status::audio::start(app.handle().clone());
             status::battery::start(app.handle().clone());
             window::configure_all(app.handle())?;
+            // 显示器热插拔：WM_DISPLAYCHANGE 到达后在主线程重建/销毁顶栏。
+            window::monitors::watch(app.handle().clone());
             // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
             app.manage(window::popup_pool::PopupPool::new(app.handle())?);
             Ok(())

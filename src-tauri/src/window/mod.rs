@@ -59,6 +59,39 @@ pub fn bar_label(index: usize) -> String {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BarChange {
+    Remove { label: String },
+    Add { label: String, monitor_handle: isize },
+}
+
+/// 按显示器句柄比较，而不是按 label：插入副屏时 label 会整体后移一位。
+pub fn bar_diff(current: &[BarWindow], displays: &[Display]) -> Vec<BarChange> {
+    let mut changes = Vec::new();
+    for bar in current {
+        if !displays
+            .iter()
+            .any(|display| display.handle == bar.monitor_handle)
+        {
+            changes.push(BarChange::Remove {
+                label: bar.label.clone(),
+            });
+        }
+    }
+    for (index, display) in displays.iter().enumerate() {
+        if !current
+            .iter()
+            .any(|bar| bar.monitor_handle == display.handle)
+        {
+            changes.push(BarChange::Add {
+                label: bar_label(index),
+                monitor_handle: display.handle,
+            });
+        }
+    }
+    changes
+}
+
 pub fn configure_all(app: &AppHandle) -> Result<(), String> {
     let displays = monitors::enumerate()?;
     if displays.is_empty() {
@@ -80,6 +113,53 @@ pub fn configure_all(app: &AppHandle) -> Result<(), String> {
     }
 
     app.manage(BarsState::new(bars));
+    Ok(())
+}
+
+/// 显示器热插拔后重新对齐窗口：先移除已拔掉的屏，再给新屏建窗口。
+pub fn resync_displays(app: &AppHandle) -> Result<(), String> {
+    let displays = monitors::enumerate()?;
+    if displays.is_empty() {
+        return Err("没有可用的显示器".to_string());
+    }
+    let Some(state) = app.try_state::<BarsState>() else {
+        // 启动阶段 configure_all 尚未 manage 状态，忽略提前到达的通知。
+        return Ok(());
+    };
+
+    for change in bar_diff(&state.snapshot(), &displays) {
+        match change {
+            BarChange::Remove { label } => {
+                if let Some(window) = app.get_webview_window(&label) {
+                    crate::appbar::unregister_for_window(&window);
+                    let _ = window.close();
+                }
+            }
+            BarChange::Add {
+                label,
+                monitor_handle,
+            } => {
+                if let Some(display) = displays
+                    .iter()
+                    .find(|display| display.handle == monitor_handle)
+                {
+                    let window = create_bar_window(app, &label)
+                        .map_err(|error| error.to_string())?;
+                    configure_bar(&window, display)?;
+                }
+            }
+        }
+    }
+
+    let bars = displays
+        .iter()
+        .enumerate()
+        .map(|(index, display)| BarWindow {
+            label: bar_label(index),
+            monitor_handle: display.handle,
+        })
+        .collect();
+    state.replace(bars);
     Ok(())
 }
 
@@ -211,6 +291,70 @@ mod tests {
         assert_eq!(physical_bar_height(1.0), 30);
         assert_eq!(physical_bar_height(1.25), 38);
         assert_eq!(physical_bar_height(1.5), 45);
+    }
+
+    fn display(handle: isize, left: i32) -> Display {
+        Display {
+            handle,
+            bounds: monitors::Bounds {
+                left,
+                top: 0,
+                right: left + 1920,
+                bottom: 1080,
+            },
+            work_area: monitors::Bounds {
+                left,
+                top: 30,
+                right: left + 1920,
+                bottom: 1050,
+            },
+            primary: handle == 1,
+        }
+    }
+
+    #[test]
+    fn bar_diff_only_touches_added_and_removed_displays() {
+        let current = vec![
+            BarWindow {
+                label: "main".to_string(),
+                monitor_handle: 1,
+            },
+            BarWindow {
+                label: "bar-1".to_string(),
+                monitor_handle: 2,
+            },
+        ];
+        let displays = vec![display(1, 0), display(3, 1920)];
+
+        assert_eq!(
+            bar_diff(&current, &displays),
+            vec![
+                BarChange::Remove {
+                    label: "bar-1".to_string(),
+                },
+                BarChange::Add {
+                    label: "bar-1".to_string(),
+                    monitor_handle: 3,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn bar_diff_ignores_reordering_of_the_same_displays() {
+        let current = vec![
+            BarWindow {
+                label: "main".to_string(),
+                monitor_handle: 1,
+            },
+            BarWindow {
+                label: "bar-1".to_string(),
+                monitor_handle: 2,
+            },
+        ];
+        let displays = vec![display(1, 0), display(2, 1920)];
+
+        assert!(bar_diff(&current, &displays).is_empty());
     }
 
     #[test]
