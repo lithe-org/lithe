@@ -18,6 +18,17 @@ pub struct Rect {
     pub height: i32,
 }
 
+/// 锚点原本相对顶栏窗口左上角；加上该窗口所在显示器的原点与缩放，
+/// 才得到虚拟桌面中的物理坐标（副屏可能在负坐标或 1920 之后）。
+pub fn anchor_to_screen(anchor: LogicalRect, scale: f64, origin_x: i32, origin_y: i32) -> Rect {
+    Rect {
+        x: origin_x + (anchor.x * scale).round() as i32,
+        y: origin_y + (anchor.y * scale).round() as i32,
+        width: (anchor.width * scale).round() as i32,
+        height: (anchor.height * scale).round() as i32,
+    }
+}
+
 /// 下拉面板默认贴在锚点下沿，右侧越界左移，下方越界翻转到锚点上方。
 pub fn place_popup(anchor: Rect, popup: Rect, screen: Rect, gap: i32) -> (i32, i32) {
     let mut x = anchor.x;
@@ -60,6 +71,36 @@ mod tests {
             width: 40,
             height: 30,
         }
+    }
+
+    #[test]
+    fn anchor_to_screen_adds_the_bars_monitor_origin() {
+        let anchor = LogicalRect {
+            x: 10.0,
+            y: 5.0,
+            width: 20.0,
+            height: 30.0,
+        };
+        // 主屏原点 (0,0)、100%
+        assert_eq!(
+            anchor_to_screen(anchor, 1.0, 0, 0),
+            Rect {
+                x: 10,
+                y: 5,
+                width: 20,
+                height: 30
+            }
+        );
+        // 副屏在 x=1920、150%：原点和尺寸都要换算
+        assert_eq!(
+            anchor_to_screen(anchor, 1.5, 1920, 0),
+            Rect {
+                x: 1935,
+                y: 8,
+                width: 30,
+                height: 45
+            }
+        );
     }
 
     #[test]
