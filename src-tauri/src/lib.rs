@@ -45,7 +45,7 @@ pub fn run() {
             status::wifi::start(app.handle().clone());
             status::audio::start(app.handle().clone());
             status::battery::start(app.handle().clone());
-            window::configure(app)?;
+            window::configure_all(app.handle())?;
             // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
             app.manage(window::popup_pool::PopupPool::new(app.handle())?);
             Ok(())

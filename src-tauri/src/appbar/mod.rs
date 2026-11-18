@@ -5,17 +5,21 @@ use windows_sys::Win32::UI::Shell::{
     SHAppBarMessage, ABE_TOP, ABM_NEW, ABM_QUERYPOS, ABM_REMOVE, ABM_SETPOS, APPBARDATA,
 };
 
-// 退出阶段主窗口可能已销毁、拿不到 hwnd，因此单独记住注册成功的那一个句柄。
-static REGISTERED_HWND: Mutex<Option<isize>> = Mutex::new(None);
+/// 每块屏一个 AppBar；退出阶段拿不到窗口，按记录的句柄逐个注销。
+static REGISTERED: Mutex<Vec<isize>> = Mutex::new(Vec::new());
 
-/// 顶部条带：从主屏左上角起算，宽度铺满。
-pub fn bar_rect(top: i32, width: i32, height: i32) -> RECT {
+/// 条带矩形按显示器原点起算，副屏不再是 x=0。
+pub fn bar_rect_at(left: i32, top: i32, width: i32, height: i32) -> RECT {
     RECT {
-        left: 0,
+        left,
         top,
-        right: width,
+        right: left + width,
         bottom: top + height,
     }
+}
+
+pub fn bar_rect(top: i32, width: i32, height: i32) -> RECT {
+    bar_rect_at(0, top, width, height)
 }
 
 /// ABM_QUERYPOS 会按当前工作区裁剪边缘（工作区有残留时 top 会被下移），
@@ -63,26 +67,38 @@ pub fn unregister(hwnd: HWND) {
         let mut data = app_bar_data(hwnd);
         SHAppBarMessage(ABM_REMOVE, &mut data);
     }
-    forget();
+    forget(hwnd);
 }
 
-/// 退出路径专用：不依赖主窗口是否还在，取出记录的句柄再注销。
-/// 重复调用是安全的，取出后即清空。
+/// 退出路径专用：不依赖窗口是否还在，清空记录后逐个注销。
 pub fn unregister_registered() {
-    if let Some(raw) = REGISTERED_HWND
+    let registered: Vec<isize> = REGISTERED
         .lock()
-        .ok()
-        .and_then(|mut registered| registered.take())
-    {
+        .map(|mut registered| std::mem::take(&mut *registered))
+        .unwrap_or_default();
+    for raw in registered {
         unregister(raw as HWND);
     }
 }
 
-pub fn register_for_window(window: &tauri::WebviewWindow, width: i32, height: i32) -> bool {
+pub fn register_for_window_at(
+    window: &tauri::WebviewWindow,
+    left: i32,
+    top: i32,
+    width: i32,
+    height: i32,
+) -> bool {
     match window.hwnd() {
-        Ok(hwnd) => register((hwnd.0 as isize) as *mut c_void, bar_rect(0, width, height)),
+        Ok(hwnd) => register(
+            (hwnd.0 as isize) as *mut c_void,
+            bar_rect_at(left, top, width, height),
+        ),
         Err(_) => false,
     }
+}
+
+pub fn register_for_window(window: &tauri::WebviewWindow, width: i32, height: i32) -> bool {
+    register_for_window_at(window, 0, 0, width, height)
 }
 
 pub fn unregister_for_window(window: &tauri::WebviewWindow) {
@@ -92,14 +108,18 @@ pub fn unregister_for_window(window: &tauri::WebviewWindow) {
 }
 
 fn remember(hwnd: HWND) {
-    if let Ok(mut registered) = REGISTERED_HWND.lock() {
-        *registered = Some(hwnd as isize);
+    if let Ok(mut registered) = REGISTERED.lock() {
+        let raw = hwnd as isize;
+        if !registered.contains(&raw) {
+            registered.push(raw);
+        }
     }
 }
 
-fn forget() {
-    if let Ok(mut registered) = REGISTERED_HWND.lock() {
-        *registered = None;
+fn forget(hwnd: HWND) {
+    if let Ok(mut registered) = REGISTERED.lock() {
+        let raw = hwnd as isize;
+        registered.retain(|item| *item != raw);
     }
 }
 
@@ -115,12 +135,25 @@ fn app_bar_data(hwnd: HWND) -> APPBARDATA {
 mod tests {
     use super::*;
 
+    // 两个用例都改写全局注册表，必须串行执行。
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
+
     #[test]
     fn bar_rect_spans_the_full_width_at_the_top_edge() {
         let rect = bar_rect(0, 1920, 30);
         assert_eq!(
             (rect.left, rect.top, rect.right, rect.bottom),
             (0, 0, 1920, 30)
+        );
+    }
+
+    #[test]
+    fn bar_rect_at_uses_the_display_origin() {
+        // 副屏在 (-1920, 0) 时条带不能从 0 起算，否则盖在主屏上。
+        let rect = bar_rect_at(-1920, 0, 1920, 30);
+        assert_eq!(
+            (rect.left, rect.top, rect.right, rect.bottom),
+            (-1920, 0, 0, 30)
         );
     }
 
@@ -155,9 +188,22 @@ mod tests {
     }
 
     #[test]
+    fn registered_handles_are_unique_and_removable() {
+        let _guard = TEST_LOCK.lock().unwrap();
+        let fake = 1234isize as HWND;
+        REGISTERED.lock().unwrap().clear();
+        remember(fake);
+        remember(fake);
+        assert_eq!(REGISTERED.lock().unwrap().len(), 1);
+        forget(fake);
+        assert!(REGISTERED.lock().unwrap().is_empty());
+    }
+
+    #[test]
     fn unregister_without_registration_is_a_no_op() {
-        // 注册可能被系统策略阻止，退出清理必须容忍「从未注册成功」。
+        let _guard = TEST_LOCK.lock().unwrap();
+        REGISTERED.lock().unwrap().clear();
         unregister_registered();
-        assert!(REGISTERED_HWND.lock().unwrap().is_none());
+        assert!(REGISTERED.lock().unwrap().is_empty());
     }
 }
