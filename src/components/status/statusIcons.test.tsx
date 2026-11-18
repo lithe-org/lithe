@@ -11,10 +11,11 @@ import {
 } from "./index";
 
 beforeEach(() => {
-  // 本文件测的是图标外壳，Wi-Fi 需要有适配器才会渲染。
+  // 本文件测的是图标外壳，Wi-Fi 与电池都需要先有数据才会渲染。
   useSystemStore.setState({
     ...initialSystemSnapshot,
     wifi: { available: true, connected: true, ssid: "Home", signal: 80 },
+    battery: { present: true, percent: 50, charging: false },
   });
 });
 

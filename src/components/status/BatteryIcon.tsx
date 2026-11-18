@@ -1,7 +1,49 @@
-import { Battery } from "lucide-react";
+import {
+  BatteryCharging,
+  BatteryFull,
+  BatteryLow,
+  BatteryMedium,
+  BatteryWarning,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
-/** M3-08 接入电量与充电状态；台式机由数据采集侧决定隐藏。 */
+/** 充电状态优先于电量档位，低电量先警告再低/中/满。 */
+export function iconForBattery(percent: number, charging: boolean): LucideIcon {
+  if (charging) {
+    return BatteryCharging;
+  }
+  if (percent <= 10) {
+    return BatteryWarning;
+  }
+  if (percent <= 30) {
+    return BatteryLow;
+  }
+  if (percent <= 70) {
+    return BatteryMedium;
+  }
+  return BatteryFull;
+}
+
 export function BatteryIcon() {
-  return <StatusIcon icon={Battery} label="电池" testId="status-battery" />;
+  const battery = useSystemStore((state) => state.battery);
+
+  if (!battery.present) {
+    return null;
+  }
+
+  const Icon = iconForBattery(battery.percent, battery.charging);
+
+  return (
+    <StatusIcon
+      icon={Icon}
+      label={
+        battery.charging
+          ? `电池充电中 ${battery.percent}%`
+          : `电池 ${battery.percent}%`
+      }
+      testId="status-battery"
+    />
+  );
 }
