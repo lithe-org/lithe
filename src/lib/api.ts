@@ -47,6 +47,23 @@ export function getWifiStatus(): Promise<WifiStatus> {
   return invoke<WifiStatus>("get_wifi_status");
 }
 
+export interface VolumeStatus {
+  level: number;
+  muted: boolean;
+}
+
+export function getVolume(): Promise<VolumeStatus> {
+  return invoke<VolumeStatus>("get_volume");
+}
+
+export function setVolume(level: number): Promise<void> {
+  return invoke("set_volume", { level });
+}
+
+export function toggleMute(): Promise<void> {
+  return invoke("toggle_mute");
+}
+
 /** 锚点是顶栏内的 CSS 逻辑坐标，Rust 侧按 DPI 换算成物理像素后再定位。 */
 export interface LogicalRect {
   x: number;

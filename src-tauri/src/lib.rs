@@ -28,13 +28,17 @@ pub fn run() {
             commands::window_control::is_controllable_foreground,
             commands::window_control::minimize_foreground,
             commands::window_control::toggle_maximize,
-            commands::window_control::toggle_topmost
+            commands::window_control::toggle_topmost,
+            status::audio::get_volume,
+            status::audio::set_volume,
+            status::audio::toggle_mute
         ])
         .setup(|app| {
             // 监听在独立线程跑消息循环，不阻塞状态栏启动。
             status::watcher::start(app.handle().clone());
             status::resource::start(app.handle().clone());
             status::wifi::start(app.handle().clone());
+            status::audio::start(app.handle().clone());
             window::configure(app)?;
             // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
             app.manage(window::popup_pool::PopupPool::new(app.handle())?);

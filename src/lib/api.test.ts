@@ -6,6 +6,9 @@ import {
   getForegroundApp,
   getResourceUsage,
   getSystemStatus,
+  getVolume,
+  setVolume,
+  toggleMute,
   getWifiStatus,
   hidePopup,
   showPopup,
@@ -17,6 +20,7 @@ const rustCommands = readFileSync("src-tauri/src/commands/system.rs", "utf8");
 const rustPopupCommands = readFileSync("src-tauri/src/commands/popup.rs", "utf8");
 const rustResource = readFileSync("src-tauri/src/status/resource.rs", "utf8");
 const rustWifi = readFileSync("src-tauri/src/status/wifi.rs", "utf8");
+const rustAudio = readFileSync("src-tauri/src/status/audio.rs", "utf8");
 const rustWindowControl = readFileSync(
   "src-tauri/src/commands/window_control.rs",
   "utf8",
@@ -96,6 +100,19 @@ describe("前后端通信契约", () => {
     expect(status.signal).toBe(72);
   });
 
+  it("音量命令读写系统音量与静音状态", async () => {
+    vi.mocked(invoke).mockResolvedValue({ level: 55, muted: false });
+
+    expect(await getVolume()).toEqual({ level: 55, muted: false });
+    expect(invoke).toHaveBeenCalledWith("get_volume");
+
+    await setVolume(72);
+    expect(invoke).toHaveBeenCalledWith("set_volume", { level: 72 });
+
+    await toggleMute();
+    expect(invoke).toHaveBeenCalledWith("toggle_mute");
+  });
+
   it("applySplit 透传布局名，由 Rust 计算目标矩形", async () => {
     await applySplit("bottom-right");
     expect(invoke).toHaveBeenCalledWith("apply_split", {
@@ -114,6 +131,9 @@ describe("前后端通信契约", () => {
     expect(rustWindowControl).toContain("pub fn apply_split(");
     expect(rustResource).toContain("pub fn get_resource_usage()");
     expect(rustWifi).toContain("pub fn get_wifi_status()");
+    expect(rustAudio).toContain("pub fn get_volume()");
+    expect(rustAudio).toContain("pub fn set_volume(");
+    expect(rustAudio).toContain("pub fn toggle_mute()");
   });
 
   it("前端事件名必须与 Rust 常量逐字一致，否则订阅永远收不到", () => {
