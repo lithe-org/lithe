@@ -111,17 +111,26 @@ pub fn start(app: AppHandle) {
         loop {
             let current = fullscreen_monitor();
             if current != previous {
-                if let Some(monitor) = current {
-                    let handle = app.clone();
-                    let _ = app.run_on_main_thread(move || {
-                        let _ =
-                            crate::window::hide_bar_for_monitor(&handle, monitor);
-                        let _ = handle.emit(
-                            EVENT_FULLSCREEN_CHANGED,
-                            FullscreenState { active: true },
-                        );
-                    });
-                }
+                let changes = transitions(previous, current);
+                let state = FullscreenState {
+                    active: current.is_some(),
+                };
+                let handle = app.clone();
+                let _ = app.run_on_main_thread(move || {
+                    for change in changes {
+                        match change {
+                            FullscreenTransition::Show(monitor) => {
+                                let _ =
+                                    crate::window::show_bar_for_monitor(&handle, monitor);
+                            }
+                            FullscreenTransition::Hide(monitor) => {
+                                let _ =
+                                    crate::window::hide_bar_for_monitor(&handle, monitor);
+                            }
+                        }
+                    }
+                    let _ = handle.emit(EVENT_FULLSCREEN_CHANGED, state);
+                });
                 previous = current;
             }
             std::thread::sleep(Duration::from_millis(500));
@@ -150,6 +159,25 @@ mod tests {
         );
         assert!(transitions(None, None).is_empty());
         assert!(transitions(Some(2), Some(2)).is_empty());
+    }
+
+    #[test]
+    fn exiting_fullscreen_shows_the_previous_monitor() {
+        assert_eq!(
+            transitions(Some(2), None),
+            vec![FullscreenTransition::Show(2)]
+        );
+    }
+
+    #[test]
+    fn switching_fullscreen_between_monitors_restores_then_hides() {
+        assert_eq!(
+            transitions(Some(1), Some(2)),
+            vec![
+                FullscreenTransition::Show(1),
+                FullscreenTransition::Hide(2)
+            ]
+        );
     }
 
     #[test]

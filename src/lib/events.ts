@@ -17,6 +17,7 @@ export const EVENTS = {
   wifiChanged: "system:wifi-changed",
   volumeChanged: "system:volume-changed",
   batteryChanged: "system:battery-changed",
+  fullscreenChanged: "system:fullscreen-changed",
   popupShow: "popup:show",
 } as const;
 

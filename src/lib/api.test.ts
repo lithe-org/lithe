@@ -190,6 +190,9 @@ describe("前后端通信契约", () => {
     expect(EVENTS.wifiChanged).toBe(rustEventName("EVENT_WIFI_CHANGED"));
     expect(EVENTS.volumeChanged).toBe(rustEventName("EVENT_VOLUME_CHANGED"));
     expect(EVENTS.batteryChanged).toBe(rustEventName("EVENT_BATTERY_CHANGED"));
+    expect(EVENTS.fullscreenChanged).toBe(
+      rustEventName("EVENT_FULLSCREEN_CHANGED"),
+    );
     expect(EVENTS.popupShow).toBe(rustEventName("EVENT_POPUP_SHOW"));
   });
 });

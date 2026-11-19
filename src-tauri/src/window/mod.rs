@@ -181,6 +181,28 @@ pub fn hide_bar_for_monitor(app: &AppHandle, monitor_handle: isize) -> Result<()
     window.hide().map_err(|error| error.to_string())
 }
 
+/// 退出全屏：先显示顶栏，再按当前几何重新注册 AppBar 预留工作区。
+pub fn show_bar_for_monitor(app: &AppHandle, monitor_handle: isize) -> Result<(), String> {
+    let window = find_bar_window(app, monitor_handle)?;
+    if window.is_visible().map_err(|error| error.to_string())? {
+        // 重复通知时不能叠加 AppBar 注册，否则工作区会被多次压缩。
+        return Ok(());
+    }
+    window.show().map_err(|error| error.to_string())?;
+
+    if let (Ok(position), Ok(size)) = (window.outer_position(), window.outer_size()) {
+        crate::appbar::register_for_window_at(
+            &window,
+            position.x,
+            position.y,
+            size.width as i32,
+            size.height as i32,
+        );
+    }
+    // shell 在 SETPOS 后会异步挪窗，pin_position 会把窗口钉回该屏原点。
+    Ok(())
+}
+
 fn create_bar_window(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
     // 配置与主窗口保持一致：透明、无边框、置顶、不抢焦点、不进任务栏。
     WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
@@ -328,6 +350,14 @@ mod tests {
             },
             primary: handle == 1,
         }
+    }
+
+    #[test]
+    fn fullscreen_watcher_is_wired_to_both_directions() {
+        // 只做隐藏不做恢复会让退出全屏后顶栏永久消失，必须双向都有调用。
+        let watcher = include_str!("../status/fullscreen.rs");
+        assert!(watcher.contains("show_bar_for_monitor"));
+        assert!(watcher.contains("hide_bar_for_monitor"));
     }
 
     #[test]
