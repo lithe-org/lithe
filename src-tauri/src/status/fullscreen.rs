@@ -1,13 +1,45 @@
+use std::time::Duration;
+use serde::Serialize;
+use tauri::{AppHandle, Emitter};
 use windows_sys::Win32::Foundation::{HWND, RECT};
 use windows_sys::Win32::UI::Shell::{
     SHQueryUserNotificationState, QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
 
+use crate::commands::EVENT_FULLSCREEN_CHANGED;
 use crate::window::monitors::{self, Bounds};
 
 /// DWM 隐藏边框与 AppBar 让位会造成几像素偏差，比对时留一点余量。
 pub const FULLSCREEN_TOLERANCE: i32 = 2;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FullscreenState {
+    pub active: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FullscreenTransition {
+    Hide(isize),
+    Show(isize),
+}
+
+/// 从一个全屏目标切到另一个：先恢复旧屏，再隐藏新屏。
+pub fn transitions(previous: Option<isize>, current: Option<isize>) -> Vec<FullscreenTransition> {
+    let mut result = Vec::new();
+    if let Some(old) = previous {
+        if Some(old) != current {
+            result.push(FullscreenTransition::Show(old));
+        }
+    }
+    if let Some(new) = current {
+        if Some(new) != previous {
+            result.push(FullscreenTransition::Hide(new));
+        }
+    }
+    result
+}
 
 /// 前台窗口是否铺满整块显示器。
 pub fn covers_monitor(window: Bounds, monitor: Bounds, tolerance: i32) -> bool {
@@ -29,29 +61,72 @@ fn is_d3d_fullscreen() -> bool {
     )
 }
 
-/// PRD 5.7：D3D 独占全屏直接判定；无边框全屏窗口靠矩形兜底。
-/// 普通最大化窗口因为 AppBar 让位只覆盖工作区，不会误判。
-pub fn is_fullscreen_active() -> bool {
-    if is_d3d_fullscreen() {
-        return true;
-    }
-
+fn foreground_rect() -> Option<Bounds> {
     let hwnd: HWND = unsafe { GetForegroundWindow() };
     if hwnd.is_null() {
-        return false;
+        return None;
     }
     let mut raw: RECT = unsafe { std::mem::zeroed() };
     if unsafe { GetWindowRect(hwnd, &mut raw) } == 0 {
-        return false;
+        return None;
     }
+    Some(Bounds::from_rect(raw))
+}
 
-    let window = Bounds::from_rect(raw);
-    let Ok(displays) = monitors::enumerate() else {
-        return false;
-    };
-    displays
+/// 返回被全屏窗口覆盖的显示器句柄，供隐藏/恢复对应顶栏。
+pub fn fullscreen_monitor() -> Option<isize> {
+    let window = foreground_rect()?;
+    let displays = monitors::enumerate().ok()?;
+    if let Some(display) = displays
         .iter()
-        .any(|display| covers_monitor(window, display.bounds, FULLSCREEN_TOLERANCE))
+        .find(|display| covers_monitor(window, display.bounds, FULLSCREEN_TOLERANCE))
+    {
+        return Some(display.handle);
+    }
+    // D3D 独占全屏偶尔拿不到精确矩形，用窗口中心所在屏兜底。
+    if is_d3d_fullscreen() {
+        let center_x = window.left + (window.right - window.left) / 2;
+        let center_y = window.top + (window.bottom - window.top) / 2;
+        return displays
+            .iter()
+            .find(|display| {
+                center_x >= display.bounds.left
+                    && center_x <= display.bounds.right
+                    && center_y >= display.bounds.top
+                    && center_y <= display.bounds.bottom
+            })
+            .map(|display| display.handle);
+    }
+    None
+}
+
+pub fn is_fullscreen_active() -> bool {
+    fullscreen_monitor().is_some() || is_d3d_fullscreen()
+}
+
+/// 轮询全屏状态；窗口操作必须投递到主线程执行。
+pub fn start(app: AppHandle) {
+    std::thread::spawn(move || {
+        let mut previous: Option<isize> = None;
+        loop {
+            let current = fullscreen_monitor();
+            if current != previous {
+                if let Some(monitor) = current {
+                    let handle = app.clone();
+                    let _ = app.run_on_main_thread(move || {
+                        let _ =
+                            crate::window::hide_bar_for_monitor(&handle, monitor);
+                        let _ = handle.emit(
+                            EVENT_FULLSCREEN_CHANGED,
+                            FullscreenState { active: true },
+                        );
+                    });
+                }
+                previous = current;
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+    });
 }
 
 #[cfg(test)]
@@ -65,6 +140,16 @@ mod tests {
             right,
             bottom,
         }
+    }
+
+    #[test]
+    fn entering_fullscreen_hides_only_the_covered_monitor() {
+        assert_eq!(
+            transitions(None, Some(2)),
+            vec![FullscreenTransition::Hide(2)]
+        );
+        assert!(transitions(None, None).is_empty());
+        assert!(transitions(Some(2), Some(2)).is_empty());
     }
 
     #[test]

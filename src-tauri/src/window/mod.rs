@@ -163,6 +163,24 @@ pub fn resync_displays(app: &AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+fn find_bar_window(app: &AppHandle, monitor_handle: isize) -> Result<WebviewWindow, String> {
+    let state = app.state::<BarsState>();
+    let bar = state
+        .snapshot()
+        .into_iter()
+        .find(|bar| bar.monitor_handle == monitor_handle)
+        .ok_or_else(|| "该显示器没有顶栏".to_string())?;
+    app.get_webview_window(&bar.label)
+        .ok_or_else(|| "顶栏窗口不存在".to_string())
+}
+
+/// 进入全屏：先注销 AppBar 归还工作区，再隐藏该屏的顶栏。
+pub fn hide_bar_for_monitor(app: &AppHandle, monitor_handle: isize) -> Result<(), String> {
+    let window = find_bar_window(app, monitor_handle)?;
+    crate::appbar::unregister_for_window(&window);
+    window.hide().map_err(|error| error.to_string())
+}
+
 fn create_bar_window(app: &AppHandle, label: &str) -> tauri::Result<WebviewWindow> {
     // 配置与主窗口保持一致：透明、无边框、置顶、不抢焦点、不进任务栏。
     WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))

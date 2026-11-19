@@ -45,6 +45,7 @@ pub fn run() {
             status::wifi::start(app.handle().clone());
             status::audio::start(app.handle().clone());
             status::battery::start(app.handle().clone());
+            status::fullscreen::start(app.handle().clone());
             window::configure_all(app.handle())?;
             // 显示器热插拔：WM_DISPLAYCHANGE 到达后在主线程重建/销毁顶栏。
             window::monitors::watch(app.handle().clone());

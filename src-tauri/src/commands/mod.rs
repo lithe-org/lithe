@@ -11,6 +11,7 @@ pub const EVENT_RESOURCE_TICK: &str = "system:resource-tick";
 pub const EVENT_WIFI_CHANGED: &str = "system:wifi-changed";
 pub const EVENT_VOLUME_CHANGED: &str = "system:volume-changed";
 pub const EVENT_BATTERY_CHANGED: &str = "system:battery-changed";
+pub const EVENT_FULLSCREEN_CHANGED: &str = "system:fullscreen-changed";
 
 /// 下拉窗口复用时用它注入内容类型（logo / control-center / split）。
 pub const EVENT_POPUP_SHOW: &str = "popup:show";
