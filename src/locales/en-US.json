@@ -120,6 +120,8 @@
       "hint": "Automatic updates arrive in M6"
     },
     "about": {
+      "appName": "Application",
+      "version": "Version",
       "license": "License: GPL-3.0-only",
       "repo": "GitHub repository",
       "issues": "Report an issue",

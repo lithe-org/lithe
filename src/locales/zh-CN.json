@@ -120,6 +120,8 @@
       "hint": "自动更新在 M6 接入"
     },
     "about": {
+      "appName": "应用名称",
+      "version": "版本号",
       "license": "开源协议：GPL-3.0-only",
       "repo": "GitHub 仓库",
       "issues": "反馈 Issue",

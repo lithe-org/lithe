@@ -2,6 +2,11 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import i18n from "../lib/i18n";
 
+vi.mock("@tauri-apps/api/app", () => ({
+  getName: vi.fn(async () => "Lithe"),
+  getVersion: vi.fn(async () => "0.1.0"),
+}));
+
 // Tauri API 只在桌面运行时存在，组件测试统一打桩，避免真实 IPC 让用例挂起。
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => undefined),
