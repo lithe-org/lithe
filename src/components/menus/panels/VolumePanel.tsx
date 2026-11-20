@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { setVolume, toggleMute } from "../../../lib/api";
 import { useSystemStore } from "../../../stores/system";
 import { iconForVolume } from "../../status/VolumeIcon";
@@ -6,6 +7,7 @@ import { iconForVolume } from "../../status/VolumeIcon";
 /** 拖动时用本地草稿即时反馈，系统事件回来后再让 store 接管。 */
 export function VolumePanel() {
   const volume = useSystemStore((state) => state.volume);
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<number | null>(null);
   const level = draft ?? volume.level;
   const Icon = iconForVolume(level, volume.muted);
@@ -26,7 +28,7 @@ export function VolumePanel() {
       <div className="flex items-center gap-2">
         <Icon className="size-4 shrink-0" />
         <input
-          aria-label="音量"
+          aria-label={t("control.volume")}
           className="h-1 flex-1 accent-current"
           data-testid="volume-slider"
           max={100}
@@ -46,7 +48,7 @@ export function VolumePanel() {
         onClick={() => void toggleMute().catch(() => {})}
         type="button"
       >
-        {volume.muted ? "取消静音" : "静音"}
+        {volume.muted ? t("volumePanel.unmute") : t("volumePanel.mute")}
       </button>
     </div>
   );

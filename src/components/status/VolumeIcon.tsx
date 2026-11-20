@@ -1,5 +1,6 @@
 import { Volume, Volume1, Volume2, VolumeX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
@@ -21,11 +22,16 @@ export function iconForVolume(level: number, muted: boolean): LucideIcon {
 export function VolumeIcon() {
   const volume = useSystemStore((state) => state.volume);
   const Icon = iconForVolume(volume.level, volume.muted);
+  const { t } = useTranslation();
 
   return (
     <StatusIcon
       icon={Icon}
-      label={volume.muted ? "音量已静音" : `音量 ${volume.level}%`}
+      label={
+        volume.muted
+          ? t("status.volumeMuted")
+          : t("status.volume", { level: volume.level })
+      }
       onClick={(event) => openControlCenter(event.currentTarget, "volume")}
       testId="status-volume"
     />

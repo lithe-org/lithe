@@ -1,9 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import { hidePopup } from "../../lib/api";
 
 interface MenuEntry {
   id: string;
-  label: string;
+  /** i18n key 的末段，完整路径为 menu.<key>。 */
+  key: string;
   separatorBefore?: boolean;
   disabled?: boolean;
   command?: string;
@@ -11,31 +13,31 @@ interface MenuEntry {
 
 // PRD 5.2.1 的顺序与分隔线位置，改动需同步 PRD。
 const ENTRIES: MenuEntry[] = [
-  { id: "system-info", label: "系统信息", command: "open_system_info" },
-  { id: "windows-settings", label: "设置", command: "open_windows_settings" },
+  { id: "system-info", key: "systemInfo", command: "open_system_info" },
+  { id: "windows-settings", key: "windowsSettings", command: "open_windows_settings" },
   {
     id: "lock",
-    label: "锁定",
+    key: "lock",
     separatorBefore: true,
     command: "lock_workstation",
   },
-  { id: "sleep", label: "睡眠", command: "sleep" },
-  { id: "restart", label: "重启", command: "restart" },
-  { id: "shutdown", label: "关机", command: "shutdown" },
+  { id: "sleep", key: "sleep", command: "sleep" },
+  { id: "restart", key: "restart", command: "restart" },
+  { id: "shutdown", key: "shutdown", command: "shutdown" },
   {
     id: "task-manager",
-    label: "任务管理器",
+    key: "taskManager",
     separatorBefore: true,
     command: "open_task_manager",
   },
   // 设置与关于窗口由 M6 提供，先占位禁用，避免点了没有任何反应。
   {
     id: "lithe-settings",
-    label: "设置 Lithe",
+    key: "litheSettings",
     separatorBefore: true,
     disabled: true,
   },
-  { id: "lithe-about", label: "关于 Lithe", disabled: true },
+  { id: "lithe-about", key: "litheAbout", disabled: true },
 ];
 
 async function activate(entry: MenuEntry) {
@@ -55,6 +57,8 @@ async function activate(entry: MenuEntry) {
 }
 
 export function LogoMenu() {
+  const { t } = useTranslation();
+
   return (
     <ul className="flex flex-col p-1" data-testid="logo-menu" role="menu">
       {ENTRIES.map((entry) => (
@@ -70,7 +74,7 @@ export function LogoMenu() {
             role="menuitem"
             type="button"
           >
-            {entry.label}
+            {t(`menu.${entry.key}`)}
           </button>
         </li>
       ))}

@@ -1,21 +1,22 @@
+import { useTranslation } from "react-i18next";
 import { applySplit, hidePopup } from "../../lib/api";
 import type { SplitLayout } from "../../lib/api";
 
 interface LayoutSpec {
   id: SplitLayout;
-  label: string;
+  key: string;
   /** 2×2 网格中高亮的格子：0 左上、1 右上、2 左下、3 右下。 */
   cells: number[];
 }
 
 // PRD 5.3.3 的六种布局，顺序按左/右/左上/右上/左下/右下排列。
 const LAYOUTS: LayoutSpec[] = [
-  { id: "left", label: "左半", cells: [0, 2] },
-  { id: "right", label: "右半", cells: [1, 3] },
-  { id: "top-left", label: "左上", cells: [0] },
-  { id: "top-right", label: "右上", cells: [1] },
-  { id: "bottom-left", label: "左下", cells: [2] },
-  { id: "bottom-right", label: "右下", cells: [3] },
+  { id: "left", key: "left", cells: [0, 2] },
+  { id: "right", key: "right", cells: [1, 3] },
+  { id: "top-left", key: "topLeft", cells: [0] },
+  { id: "top-right", key: "topRight", cells: [1] },
+  { id: "bottom-left", key: "bottomLeft", cells: [2] },
+  { id: "bottom-right", key: "bottomRight", cells: [3] },
 ];
 
 async function activate(layout: SplitLayout) {
@@ -29,11 +30,13 @@ async function activate(layout: SplitLayout) {
 }
 
 export function SplitMenu() {
+  const { t } = useTranslation();
+
   return (
     <div className="grid grid-cols-3 gap-1 p-2" data-testid="split-menu">
       {LAYOUTS.map((layout) => (
         <button
-          aria-label={layout.label}
+          aria-label={t(`split.${layout.key}`)}
           className="flex flex-col items-center gap-1 rounded-[var(--lithe-radius)] p-2 hover:bg-black/10"
           data-testid={`split-layout-${layout.id}`}
           key={layout.id}
@@ -53,7 +56,9 @@ export function SplitMenu() {
               />
             ))}
           </span>
-          <span className="text-[11px] leading-none">{layout.label}</span>
+          <span className="text-[11px] leading-none">
+            {t(`split.${layout.key}`)}
+          </span>
         </button>
       ))}
     </div>

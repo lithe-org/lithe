@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import "./lib/i18n";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { PopupHost } from "./components/PopupHost";
@@ -18,6 +19,7 @@ import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
 import { useThemeStore } from "./stores/theme";
+import { useTranslation } from "react-i18next";
 import { applyTheme } from "./lib/theme";
 
 /** 顶栏与下拉窗口都需要同一份主题；变化时统一写 CSS 变量与 dark 类。 */
@@ -73,6 +75,7 @@ function StatusBar() {
     (state) => state.setForegroundControllable,
   );
   const time = useSystemStore((state) => state.time);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +136,7 @@ function StatusBar() {
         data-testid="zone-left"
       >
         <button
-          aria-label="Lithe 菜单"
+          aria-label={t("app.litheMenu")}
           className="flex shrink-0 items-center rounded-[var(--lithe-radius)] p-0.5 hover:bg-black/10"
           data-testid="windows-logo-button"
           onClick={(event) => void openLogoMenu(event.currentTarget)}

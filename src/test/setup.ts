@@ -1,5 +1,6 @@
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
+import i18n from "../lib/i18n";
 
 // Tauri API 只在桌面运行时存在，组件测试统一打桩，避免真实 IPC 让用例挂起。
 vi.mock("@tauri-apps/api/core", () => ({
@@ -22,4 +23,6 @@ afterEach(() => cleanup());
 
 beforeEach(() => {
   localStorage.clear();
+  // 语言是模块级单例，用例间复位成默认中文，避免英文文案泄漏到别的用例。
+  void i18n.changeLanguage("zh-CN");
 });

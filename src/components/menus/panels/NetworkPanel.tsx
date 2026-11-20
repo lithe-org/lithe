@@ -1,5 +1,6 @@
 import { Lock, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { listWifiNetworks } from "../../../lib/api";
 import type { WifiNetwork } from "../../../lib/api";
 import { useSystemStore } from "../../../stores/system";
@@ -11,6 +12,7 @@ export function NetworkPanel() {
   const wifi = useSystemStore((state) => state.wifi);
   const [networks, setNetworks] = useState<WifiNetwork[]>([]);
   const [scanState, setScanState] = useState<ScanState>("loading");
+  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -36,20 +38,20 @@ export function NetworkPanel() {
     <div data-testid="network-panel">
       <p className="mb-2 text-[11px] opacity-70" data-testid="network-summary">
         {wifi.connected
-          ? `已连接 ${wifi.ssid}（信号 ${wifi.signal}%）`
+          ? t("network.connected", { ssid: wifi.ssid, signal: wifi.signal })
           : wifi.available
-            ? "未连接"
-            : "无 Wi-Fi 适配器"}
+            ? t("network.notConnected")
+            : t("network.noAdapter")}
       </p>
 
       {scanState === "loading" ? (
-        <p className="text-[11px] opacity-60">扫描中…</p>
+        <p className="text-[11px] opacity-60">{t("network.scanning")}</p>
       ) : null}
       {scanState === "error" ? (
-        <p className="text-[11px] opacity-60">无法获取网络列表</p>
+        <p className="text-[11px] opacity-60">{t("network.failed")}</p>
       ) : null}
       {scanState === "ready" && networks.length === 0 ? (
-        <p className="text-[11px] opacity-60">未发现可用网络</p>
+        <p className="text-[11px] opacity-60">{t("network.empty")}</p>
       ) : null}
 
       {scanState === "ready" && networks.length > 0 ? (
@@ -63,13 +65,18 @@ export function NetworkPanel() {
               <Wifi className="size-3.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{network.ssid}</span>
               {network.secure ? (
-                <Lock aria-label="加密网络" className="size-3 shrink-0 opacity-60" />
+                <Lock
+                  aria-label={t("network.secured")}
+                  className="size-3 shrink-0 opacity-60"
+                />
               ) : null}
               <span className="tabular-nums text-[11px] opacity-60">
                 {network.signal}%
               </span>
               {network.connected ? (
-                <span className="text-[10px] opacity-80">已连接</span>
+                <span className="text-[10px] opacity-80">
+                  {t("network.connectedBadge")}
+                </span>
               ) : null}
             </li>
           ))}

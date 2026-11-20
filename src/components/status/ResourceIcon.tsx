@@ -1,5 +1,6 @@
 import { Activity } from "lucide-react";
 import { openControlCenter } from "../../lib/panels";
+import { useTranslation } from "react-i18next";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
 
@@ -9,11 +10,12 @@ export function ResourceIcon() {
   const memoryPercent = useSystemStore((state) => state.memoryPercent);
   const cpu = Math.round(cpuPercent);
   const memory = Math.round(memoryPercent);
+  const { t } = useTranslation();
 
   return (
     <StatusIcon
       icon={Activity}
-      label={`CPU ${cpu}%，内存 ${memory}%`}
+      label={t("status.cpuMemory", { cpu, memory })}
       onClick={(event) => openControlCenter(event.currentTarget, "resource")}
       testId="status-resource"
     >

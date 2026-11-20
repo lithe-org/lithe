@@ -1,0 +1,77 @@
+{
+  "app": {
+    "litheMenu": "Lithe menu",
+    "foregroundPlaceholder": "--"
+  },
+  "menu": {
+    "systemInfo": "System information",
+    "windowsSettings": "Settings",
+    "lock": "Lock",
+    "sleep": "Sleep",
+    "restart": "Restart",
+    "shutdown": "Shut down",
+    "taskManager": "Task Manager",
+    "litheSettings": "Lithe settings",
+    "litheAbout": "About Lithe"
+  },
+  "window": {
+    "pin": "Always on top",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
+    "split": "Snap layout"
+  },
+  "split": {
+    "left": "Left",
+    "right": "Right",
+    "topLeft": "Top left",
+    "topRight": "Top right",
+    "bottomLeft": "Bottom left",
+    "bottomRight": "Bottom right"
+  },
+  "status": {
+    "notifications": "Notifications",
+    "cpuMemory": "CPU {{cpu}}%, memory {{memory}}%",
+    "volumeMuted": "Muted",
+    "volume": "Volume {{level}}%",
+    "batteryCharging": "Battery charging {{percent}}%",
+    "battery": "Battery {{percent}}%"
+  },
+  "control": {
+    "network": "Network",
+    "volume": "Volume",
+    "battery": "Battery",
+    "resource": "Resources",
+    "theme": "Theme",
+    "resourcePlaceholder": "CPU and memory usage (coming later)"
+  },
+  "network": {
+    "connected": "Connected to {{ssid}} (signal {{signal}}%)",
+    "notConnected": "Not connected",
+    "noAdapter": "No Wi-Fi adapter",
+    "scanning": "Scanning…",
+    "failed": "Unable to list networks",
+    "empty": "No available networks",
+    "secured": "Secured network",
+    "connectedBadge": "Connected"
+  },
+  "volumePanel": {
+    "mute": "Mute",
+    "unmute": "Unmute"
+  },
+  "batteryPanel": {
+    "noBattery": "No battery (desktop)",
+    "charging": "Charging / plugged in",
+    "discharging": "Running on battery"
+  },
+  "theme": {
+    "mode": "Theme mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "accent": "Accent color",
+    "accentPreset": "Accent color {{color}}",
+    "customAccent": "Custom accent color",
+    "resetAccent": "Use system accent",
+    "currentAccent": "Current {{accent}}"
+  }
+}

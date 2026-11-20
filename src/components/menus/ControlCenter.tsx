@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { resizePopup } from "../../lib/api";
 import type { ReactElement } from "react";
 import type { ControlModule } from "../../lib/panels";
@@ -7,12 +8,13 @@ import { NetworkPanel } from "./panels/NetworkPanel";
 import { VolumePanel } from "./panels/VolumePanel";
 import { ThemePanel } from "./panels/ThemePanel";
 
-const MODULES: { id: ControlModule; title: string; placeholder: string }[] = [
-  { id: "network", title: "网络", placeholder: "Wi-Fi 连接与信号（M3-11 填充）" },
-  { id: "volume", title: "音量", placeholder: "音量滑块与静音开关（M3-12 填充）" },
-  { id: "battery", title: "电池", placeholder: "电量与充电状态（M3-12 填充）" },
-  { id: "resource", title: "资源", placeholder: "CPU 与内存占用（后续填充）" },
-  { id: "theme", title: "主题", placeholder: "亮色 / 暗色 / 跟随系统（M5 填充）" },
+// 顺序即 PRD 5.4.3 的模块顺序，标题走 i18n 的 control.<id>。
+const MODULES: ControlModule[] = [
+  "network",
+  "volume",
+  "battery",
+  "resource",
+  "theme",
 ];
 
 /** 已实现的模块渲染真实内容，其余仍显示占位说明。 */
@@ -31,6 +33,7 @@ interface ControlCenterProps {
 export function ControlCenter({ focus }: ControlCenterProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // 宽度由窗口池固定，这里只把高度按内容收缩，并留一个屏幕内的上限。
@@ -58,20 +61,22 @@ export function ControlCenter({ focus }: ControlCenterProps) {
       ref={viewportRef}
     >
       <div className="p-3" ref={contentRef}>
-        {MODULES.map((module) => {
-          const Panel = PANELS[module.id];
+        {MODULES.map((id) => {
+          const Panel = PANELS[id];
           return (
             <section
               className="mb-3 rounded-[var(--lithe-radius)] bg-black/5 p-3"
-              data-module={module.id}
-              data-testid={`control-module-${module.id}`}
-              key={module.id}
+              data-module={id}
+              data-testid={`control-module-${id}`}
+              key={id}
             >
-              <h3 className="mb-1 text-[12px] font-medium">{module.title}</h3>
+              <h3 className="mb-1 text-[12px] font-medium">{t(`control.${id}`)}</h3>
               {Panel ? (
                 <Panel />
               ) : (
-                <p className="text-[11px] opacity-60">{module.placeholder}</p>
+                <p className="text-[11px] opacity-60">
+                  {t("control.resourcePlaceholder")}
+                </p>
               )}
             </section>
           );

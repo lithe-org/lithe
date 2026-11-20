@@ -6,6 +6,7 @@ import {
   BatteryWarning,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { openControlCenter } from "../../lib/panels";
 import { useSystemStore } from "../../stores/system";
 import { StatusIcon } from "./StatusIcon";
@@ -29,6 +30,7 @@ export function iconForBattery(percent: number, charging: boolean): LucideIcon {
 
 export function BatteryIcon() {
   const battery = useSystemStore((state) => state.battery);
+  const { t } = useTranslation();
 
   if (!battery.present) {
     return null;
@@ -41,8 +43,8 @@ export function BatteryIcon() {
       icon={Icon}
       label={
         battery.charging
-          ? `电池充电中 ${battery.percent}%`
-          : `电池 ${battery.percent}%`
+          ? t("status.batteryCharging", { percent: battery.percent })
+          : t("status.battery", { percent: battery.percent })
       }
       onClick={(event) => openControlCenter(event.currentTarget, "battery")}
       testId="status-battery"

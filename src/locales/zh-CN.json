@@ -1,0 +1,77 @@
+{
+  "app": {
+    "litheMenu": "Lithe 菜单",
+    "foregroundPlaceholder": "--"
+  },
+  "menu": {
+    "systemInfo": "系统信息",
+    "windowsSettings": "设置",
+    "lock": "锁定",
+    "sleep": "睡眠",
+    "restart": "重启",
+    "shutdown": "关机",
+    "taskManager": "任务管理器",
+    "litheSettings": "设置 Lithe",
+    "litheAbout": "关于 Lithe"
+  },
+  "window": {
+    "pin": "置顶",
+    "maximize": "最大化",
+    "minimize": "最小化",
+    "split": "分屏"
+  },
+  "split": {
+    "left": "左半",
+    "right": "右半",
+    "topLeft": "左上",
+    "topRight": "右上",
+    "bottomLeft": "左下",
+    "bottomRight": "右下"
+  },
+  "status": {
+    "notifications": "通知",
+    "cpuMemory": "CPU {{cpu}}%，内存 {{memory}}%",
+    "volumeMuted": "音量已静音",
+    "volume": "音量 {{level}}%",
+    "batteryCharging": "电池充电中 {{percent}}%",
+    "battery": "电池 {{percent}}%"
+  },
+  "control": {
+    "network": "网络",
+    "volume": "音量",
+    "battery": "电池",
+    "resource": "资源",
+    "theme": "主题",
+    "resourcePlaceholder": "CPU 与内存占用（后续填充）"
+  },
+  "network": {
+    "connected": "已连接 {{ssid}}（信号 {{signal}}%）",
+    "notConnected": "未连接",
+    "noAdapter": "无 Wi-Fi 适配器",
+    "scanning": "扫描中…",
+    "failed": "无法获取网络列表",
+    "empty": "未发现可用网络",
+    "secured": "加密网络",
+    "connectedBadge": "已连接"
+  },
+  "volumePanel": {
+    "mute": "静音",
+    "unmute": "取消静音"
+  },
+  "batteryPanel": {
+    "noBattery": "无电池（台式机）",
+    "charging": "正在充电 / 外接电源",
+    "discharging": "使用电池供电"
+  },
+  "theme": {
+    "mode": "主题模式",
+    "light": "亮色",
+    "dark": "暗色",
+    "system": "跟随系统",
+    "accent": "强调色",
+    "accentPreset": "强调色 {{color}}",
+    "customAccent": "自定义强调色",
+    "resetAccent": "恢复系统强调色",
+    "currentAccent": "当前 {{accent}}"
+  }
+}
