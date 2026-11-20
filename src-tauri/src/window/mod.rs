@@ -1,3 +1,4 @@
+pub mod backdrop;
 pub mod monitors;
 pub mod placement;
 pub mod popup_pool;
@@ -292,6 +293,13 @@ fn set_no_activate(window: &WebviewWindow) {
 }
 
 fn apply_acrylic(window: &WebviewWindow) {
+    if let Ok(hwnd) = window.hwnd() {
+        let hwnd_sys = (hwnd.0 as isize) as *mut std::ffi::c_void;
+        if backdrop::apply_acrylic_backdrop(hwnd_sys) {
+            return;
+        }
+    }
+    // 旧版 Windows 不支持 DWMWA_SYSTEMBACKDROP_TYPE 时回退到 Tauri 自带的 Effects。
     // 失败只影响观感，不阻断启动；前端还有一层半透明着色兜底。
     let _ = window.set_effects(EffectsBuilder::new().effect(Effect::Acrylic).build());
 }
