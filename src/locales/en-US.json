@@ -86,7 +86,7 @@
     },
     "general": {
       "startup": "Start at login",
-      "startupHint": "Automatic startup arrives in M6",
+      "startupHint": "Start Lithe when signing in to Windows",
       "language": "Interface language",
       "langZh": "Chinese",
       "langEn": "English",

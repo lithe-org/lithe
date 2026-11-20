@@ -86,7 +86,7 @@
     },
     "general": {
       "startup": "开机自启",
-      "startupHint": "自动启动将在 M6 接入",
+      "startupHint": "登录 Windows 后自动启动 Lithe",
       "language": "界面语言",
       "langZh": "中文",
       "langEn": "English",

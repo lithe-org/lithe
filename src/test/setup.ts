@@ -2,6 +2,12 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import i18n from "../lib/i18n";
 
+vi.mock("@tauri-apps/plugin-autostart", () => ({
+  isEnabled: vi.fn(async () => false),
+  enable: vi.fn(async () => {}),
+  disable: vi.fn(async () => {}),
+}));
+
 vi.mock("@tauri-apps/api/app", () => ({
   getName: vi.fn(async () => "Lithe"),
   getVersion: vi.fn(async () => "0.1.0"),
