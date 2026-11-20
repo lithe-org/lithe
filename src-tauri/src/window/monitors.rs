@@ -1,11 +1,11 @@
 use std::sync::mpsc::{self, Sender};
 use std::sync::Mutex;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 use windows_sys::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, HWND_MESSAGE, RegisterClassW,
-    TranslateMessage, MSG, WNDCLASSW, WM_DISPLAYCHANGE,
+    TranslateMessage, MSG, WNDCLASSW, WM_DISPLAYCHANGE, WM_SETTINGCHANGE,
 };
 use windows_sys::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO,
@@ -129,8 +129,14 @@ pub fn scale_factor(handle: isize) -> f64 {
     scale_from_dpi(dpi_for(handle))
 }
 
-/// 隐藏的消息窗口把 WM_DISPLAYCHANGE 转成 channel 信号。
-static CHANGE_SENDER: Mutex<Option<Sender<()>>> = Mutex::new(None);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SystemSignal {
+    Display,
+    Theme,
+}
+
+/// 隐藏的消息窗口把 WM_DISPLAYCHANGE / WM_SETTINGCHANGE 转成 channel 信号。
+static CHANGE_SENDER: Mutex<Option<Sender<SystemSignal>>> = Mutex::new(None);
 
 pub fn watch(app: AppHandle) {
     let (sender, receiver) = mpsc::channel();
@@ -140,11 +146,17 @@ pub fn watch(app: AppHandle) {
 
     std::thread::spawn(|| unsafe { run_watcher_loop() });
     std::thread::spawn(move || {
-        while receiver.recv().is_ok() {
+        while let Ok(signal) = receiver.recv() {
             let handle = app.clone();
-            // 窗口的创建与销毁必须在主线程做。
-            let _ = app.run_on_main_thread(move || {
-                let _ = crate::window::resync_displays(&handle);
+            // 窗口操作与事件发送都留在主线程。
+            let _ = app.run_on_main_thread(move || match signal {
+                SystemSignal::Display => {
+                    let _ = crate::window::resync_displays(&handle);
+                }
+                SystemSignal::Theme => {
+                    let info = crate::commands::theme::get_system_theme();
+                    let _ = handle.emit(crate::commands::EVENT_THEME_CHANGED, info);
+                }
             });
         }
     });
@@ -156,10 +168,17 @@ unsafe extern "system" fn watcher_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
-    if message == WM_DISPLAYCHANGE {
+    let signal = if message == WM_DISPLAYCHANGE {
+        Some(SystemSignal::Display)
+    } else if message == WM_SETTINGCHANGE {
+        Some(SystemSignal::Theme)
+    } else {
+        None
+    };
+    if let Some(signal) = signal {
         if let Ok(sender) = CHANGE_SENDER.lock() {
             if let Some(tx) = sender.as_ref() {
-                let _ = tx.send(());
+                let _ = tx.send(signal);
             }
         }
     }

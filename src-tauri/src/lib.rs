@@ -24,6 +24,7 @@ pub fn run() {
             commands::power::sleep,
             commands::system::get_foreground_app,
             commands::system::get_system_status,
+            commands::theme::get_theme_info,
             status::resource::get_resource_usage,
             status::wifi::get_wifi_status,
             status::wifi::list_wifi_networks,

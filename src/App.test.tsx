@@ -89,7 +89,10 @@ describe("顶栏骨架", () => {
     await renderApp();
 
     expect(invoke).toHaveBeenCalledWith("get_foreground_app");
-    expect(invoke).toHaveBeenCalledTimes(1);
+    // 主题初始化也会发一次 IPC，这里只约束前台应用链路只拉一次。
+    expect(
+      vi.mocked(invoke).mock.calls.filter(([name]) => name === "get_foreground_app"),
+    ).toHaveLength(1);
     expect(screen.getByTestId("foreground-app").textContent).toBe("Visual Studio Code");
   });
 

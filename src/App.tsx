@@ -12,11 +12,42 @@ import {
   WifiIcon,
 } from "./components/status";
 import { WindowsLogo } from "./components/WindowsLogo";
-import { getForegroundApp, showPopup } from "./lib/api";
+import { getForegroundApp, getThemeInfo, showPopup } from "./lib/api";
 import { isPopupLabel } from "./lib/windowRole";
 import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
+import { useThemeStore } from "./stores/theme";
+import { applyTheme } from "./lib/theme";
+
+/** 顶栏与下拉窗口都需要同一份主题；变化时统一写 CSS 变量与 dark 类。 */
+function ThemeSync() {
+  const mode = useThemeStore((state) => state.mode);
+  const dark = useThemeStore((state) => state.dark);
+  const accent = useThemeStore((state) => state.accent);
+
+  useEffect(() => {
+    let cancelled = false;
+    getThemeInfo()
+      .then((info) => {
+        if (!cancelled && info) {
+          useThemeStore.getState().applySystemTheme(info);
+        }
+      })
+      .catch(() => {
+        // 读不到系统主题时保留默认值，手动切换仍可用。
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    applyTheme();
+  }, [mode, dark, accent]);
+
+  return null;
+}
 
 async function openLogoMenu(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
@@ -140,7 +171,17 @@ function StatusBar() {
 
 function App() {
   // 顶栏与下拉窗口共用同一份 bundle，按窗口 label 分流后各自的 hooks 互不影响。
-  return isPopupLabel(getCurrentWindow().label) ? <PopupHost /> : <StatusBar />;
+  const content = isPopupLabel(getCurrentWindow().label) ? (
+    <PopupHost />
+  ) : (
+    <StatusBar />
+  );
+  return (
+    <>
+      <ThemeSync />
+      {content}
+    </>
+  );
 }
 
 export default App;

@@ -6,6 +6,8 @@ import type {
   VolumeStatus,
   WifiStatus,
 } from "./api";
+import type { ThemeInfo } from "../stores/theme";
+import { useThemeStore } from "../stores/theme";
 import { useSystemStore } from "../stores/system";
 
 // 与 src-tauri/src/commands/mod.rs 的常量逐字一致，由 api.test.ts 校验漂移。
@@ -18,6 +20,7 @@ export const EVENTS = {
   volumeChanged: "system:volume-changed",
   batteryChanged: "system:battery-changed",
   fullscreenChanged: "system:fullscreen-changed",
+  themeChanged: "system:theme-changed",
   popupShow: "popup:show",
 } as const;
 
@@ -42,6 +45,9 @@ export function registerSystemEvents(): Promise<UnlistenFn[]> {
     }),
     listen<BatteryStatus>(EVENTS.batteryChanged, (event) => {
       useSystemStore.getState().patch({ battery: event.payload });
+    }),
+    listen<ThemeInfo>(EVENTS.themeChanged, (event) => {
+      useThemeStore.getState().applySystemTheme(event.payload);
     }),
   ]);
 }

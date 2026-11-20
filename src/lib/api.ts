@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { ThemeInfo } from "../stores/theme";
 
 /** 与 src-tauri/src/commands/system.rs 的 ForegroundApp 字段逐字对齐。 */
 export interface ForegroundApp {
@@ -114,6 +115,10 @@ export function closePopup(): Promise<number> {
 
 export function openNotificationCenter(): Promise<void> {
   return invoke("open_notification_center");
+}
+
+export function getThemeInfo(): Promise<ThemeInfo> {
+  return invoke<ThemeInfo>("get_theme_info");
 }
 
 export function hidePopup(): Promise<void> {

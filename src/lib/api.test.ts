@@ -9,6 +9,7 @@ import {
   getForegroundApp,
   getResourceUsage,
   getSystemStatus,
+  getThemeInfo,
   getVolume,
   setVolume,
   toggleMute,
@@ -136,6 +137,13 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledWith("open_notification_center");
   });
 
+  it("getThemeInfo 读取系统明暗与强调色", async () => {
+    vi.mocked(invoke).mockResolvedValue({ dark: true, accent: "#AABBCC" });
+
+    expect(await getThemeInfo()).toEqual({ dark: true, accent: "#AABBCC" });
+    expect(invoke).toHaveBeenCalledWith("get_theme_info");
+  });
+
   it("resizePopup 按内容高度调整面板，宽度由 Rust 固定", async () => {
     await resizePopup(320);
     expect(invoke).toHaveBeenCalledWith("resize_popup", { height: 320 });
@@ -193,6 +201,7 @@ describe("前后端通信契约", () => {
     expect(EVENTS.fullscreenChanged).toBe(
       rustEventName("EVENT_FULLSCREEN_CHANGED"),
     );
+    expect(EVENTS.themeChanged).toBe(rustEventName("EVENT_THEME_CHANGED"));
     expect(EVENTS.popupShow).toBe(rustEventName("EVENT_POPUP_SHOW"));
   });
 });
