@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { hidePopup } from "../../lib/api";
+import { showSettingsWindow } from "../../lib/windows";
 
 interface MenuEntry {
   id: string;
@@ -9,6 +10,8 @@ interface MenuEntry {
   separatorBefore?: boolean;
   disabled?: boolean;
   command?: string;
+  /** 部分入口走前端窗口 API，而不是 Tauri 命令。 */
+  action?: "open-settings";
 }
 
 // PRD 5.2.1 的顺序与分隔线位置，改动需同步 PRD。
@@ -30,12 +33,11 @@ const ENTRIES: MenuEntry[] = [
     separatorBefore: true,
     command: "open_task_manager",
   },
-  // 设置与关于窗口由 M6 提供，先占位禁用，避免点了没有任何反应。
   {
     id: "lithe-settings",
     key: "litheSettings",
     separatorBefore: true,
-    disabled: true,
+    action: "open-settings",
   },
   { id: "lithe-about", key: "litheAbout", disabled: true },
 ];
@@ -46,6 +48,10 @@ async function activate(entry: MenuEntry) {
   }
   // 先收起菜单，动作失败也不会留下悬空面板。
   void hidePopup();
+  if (entry.action === "open-settings") {
+    void showSettingsWindow();
+    return;
+  }
   if (!entry.command) {
     return;
   }

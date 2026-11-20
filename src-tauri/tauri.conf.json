@@ -26,6 +26,23 @@
         "resizable": false,
         "visible": false,
         "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "Lithe Settings",
+        "width": 820,
+        "height": 600,
+        "minWidth": 640,
+        "minHeight": 420,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "focus": true,
+        "resizable": true,
+        "visible": false,
+        "shadow": true
       }
     ],
     "security": {

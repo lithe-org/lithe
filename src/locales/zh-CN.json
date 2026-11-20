@@ -73,5 +73,56 @@
     "customAccent": "自定义强调色",
     "resetAccent": "恢复系统强调色",
     "currentAccent": "当前 {{accent}}"
+  },
+  "settings": {
+    "title": "Lithe 设置",
+    "categories": {
+      "general": "通用",
+      "appearance": "外观",
+      "statusBar": "状态栏",
+      "behavior": "行为",
+      "updates": "更新",
+      "about": "关于"
+    },
+    "general": {
+      "startup": "开机自启",
+      "startupHint": "自动启动将在 M6 接入",
+      "language": "界面语言",
+      "checkUpdate": "检查更新",
+      "updateHint": "更新检查将在 M6 接入"
+    },
+    "appearance": {
+      "theme": "主题模式",
+      "accent": "强调色",
+      "fontSize": "字体大小",
+      "fontSizeHint": "第一版固定 13px"
+    },
+    "statusBar": {
+      "visibility": "显示项目",
+      "height": "状态栏高度",
+      "items": {
+        "resource": "资源占用",
+        "wifi": "Wi-Fi",
+        "volume": "音量",
+        "battery": "电池",
+        "datetime": "日期时间"
+      }
+    },
+    "behavior": {
+      "autoHide": "全屏时自动隐藏",
+      "doubleClick": "双击空白区域最大化窗口"
+    },
+    "updates": {
+      "currentVersion": "当前版本",
+      "check": "检查更新",
+      "hint": "自动更新在 M6 接入"
+    },
+    "about": {
+      "license": "开源协议：GPL-3.0-only",
+      "repo": "GitHub 仓库",
+      "issues": "反馈 Issue",
+      "credits": "致谢",
+      "creditsText": "Tauri · React · Rust · Inter · Source Han Sans"
+    }
   }
 }

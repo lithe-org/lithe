@@ -14,7 +14,8 @@ import {
 } from "./components/status";
 import { WindowsLogo } from "./components/WindowsLogo";
 import { getForegroundApp, getThemeInfo, showPopup } from "./lib/api";
-import { isPopupLabel } from "./lib/windowRole";
+import { isPopupLabel, isSettingsLabel } from "./lib/windowRole";
+import { SettingsWindow } from "./components/settings/SettingsWindow";
 import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
@@ -175,7 +176,10 @@ function StatusBar() {
 
 function App() {
   // 顶栏与下拉窗口共用同一份 bundle，按窗口 label 分流后各自的 hooks 互不影响。
-  const content = isPopupLabel(getCurrentWindow().label) ? (
+  const label = getCurrentWindow().label;
+  const content = isSettingsLabel(label) ? (
+    <SettingsWindow />
+  ) : isPopupLabel(label) ? (
     <PopupHost />
   ) : (
     <StatusBar />

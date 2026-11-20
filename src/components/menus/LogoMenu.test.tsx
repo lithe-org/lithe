@@ -1,4 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { act } from "@testing-library/react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LogoMenu } from "./LogoMenu";
@@ -49,7 +51,7 @@ describe("Logo 菜单", () => {
     expect(invoke).toHaveBeenCalledWith("open_task_manager");
   });
 
-  it("设置与关于 Lithe 在窗口实现前保持禁用，避免点了没反应", () => {
+  it("设置项打开设置窗口，关于 Lithe 仍禁用", async () => {
     render(<LogoMenu />);
 
     const settings = screen.getByTestId(
@@ -59,10 +61,13 @@ describe("Logo 菜单", () => {
       "menu-item-lithe-about",
     ) as HTMLButtonElement;
 
-    expect(settings.disabled).toBe(true);
+    expect(settings.disabled).toBe(false);
     expect(about.disabled).toBe(true);
 
-    fireEvent.click(settings);
-    expect(invoke).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(settings);
+    });
+    expect(WebviewWindow.getByLabel).toHaveBeenCalledWith("settings");
+    expect(invoke).not.toHaveBeenCalledWith("open_system_info");
   });
 });

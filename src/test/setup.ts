@@ -17,6 +17,15 @@ vi.mock("@tauri-apps/api/window", () => ({
   getCurrentWindow: vi.fn(() => ({ label: "main" })),
 }));
 
+vi.mock("@tauri-apps/api/webviewWindow", () => ({
+  WebviewWindow: {
+    getByLabel: vi.fn(async () => ({
+      show: vi.fn(async () => {}),
+      setFocus: vi.fn(async () => {}),
+    })),
+  },
+}));
+
 // jsdom 的 localStorage 在同一文件内跨用例共享，组件若落盘状态必须逐例清理。
 // 未开启 globals 时 RTL 不会自动注册清理钩子，残留 DOM 会让 getByTestId 命中多个节点。
 afterEach(() => cleanup());

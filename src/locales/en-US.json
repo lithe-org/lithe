@@ -73,5 +73,56 @@
     "customAccent": "Custom accent color",
     "resetAccent": "Use system accent",
     "currentAccent": "Current {{accent}}"
+  },
+  "settings": {
+    "title": "Lithe Settings",
+    "categories": {
+      "general": "General",
+      "appearance": "Appearance",
+      "statusBar": "Status bar",
+      "behavior": "Behavior",
+      "updates": "Updates",
+      "about": "About"
+    },
+    "general": {
+      "startup": "Start at login",
+      "startupHint": "Automatic startup arrives in M6",
+      "language": "Interface language",
+      "checkUpdate": "Check for updates",
+      "updateHint": "Update checks arrive in M6"
+    },
+    "appearance": {
+      "theme": "Theme mode",
+      "accent": "Accent color",
+      "fontSize": "Font size",
+      "fontSizeHint": "Fixed at 13px in the first release"
+    },
+    "statusBar": {
+      "visibility": "Visible items",
+      "height": "Status bar height",
+      "items": {
+        "resource": "Resource usage",
+        "wifi": "Wi-Fi",
+        "volume": "Volume",
+        "battery": "Battery",
+        "datetime": "Date and time"
+      }
+    },
+    "behavior": {
+      "autoHide": "Hide on full screen",
+      "doubleClick": "Double-click empty area to maximize"
+    },
+    "updates": {
+      "currentVersion": "Current version",
+      "check": "Check for updates",
+      "hint": "Automatic updates arrive in M6"
+    },
+    "about": {
+      "license": "License: GPL-3.0-only",
+      "repo": "GitHub repository",
+      "issues": "Report an issue",
+      "credits": "Credits",
+      "creditsText": "Tauri · React · Rust · Inter · Source Han Sans"
+    }
   }
 }

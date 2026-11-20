@@ -326,6 +326,14 @@ mod tests {
     }
 
     #[test]
+    fn settings_window_is_a_normal_decorated_window() {
+        let config = include_str!("../../tauri.conf.json");
+        assert!(config.contains("\"label\": \"settings\""));
+        // 设置窗口要有标题栏，不能沿用顶栏的无边框配置。
+        assert!(config.contains("\"decorations\": true"));
+    }
+
+    #[test]
     fn bar_height_matches_the_css_token() {
         // CSS 与 Rust 各写一份高度，漂移会让顶栏被裁切或留下空隙（坑 #25）。
         let css = include_str!("../../../src/styles/index.css");
