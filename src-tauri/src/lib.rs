@@ -22,6 +22,7 @@ pub fn run() {
             commands::power::restart,
             commands::power::shutdown,
             commands::power::sleep,
+            commands::settings::set_bar_height,
             commands::system::get_foreground_app,
             commands::system::get_system_status,
             commands::theme::get_theme_info,

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { initialSystemSnapshot, useSystemStore } from "./stores/system";
 import { initialUiSnapshot, useUiStore } from "./stores/ui";
+import { useSettingsStore } from "./stores/settings";
 
 const defaultForegroundApp = {
   name: "应用",
@@ -20,6 +21,18 @@ beforeEach(() => {
   // store 是模块级单例，用例间必须复位，否则前一个用例的状态会泄漏到下一个。
   useSystemStore.setState(initialSystemSnapshot);
   useUiStore.setState(initialUiSnapshot);
+  useSettingsStore.setState({
+    visibility: {
+      resource: true,
+      wifi: true,
+      volume: true,
+      battery: true,
+      datetime: true,
+    },
+    barHeight: 30,
+    autoHideFullscreen: true,
+    doubleClickOnEmpty: false,
+  });
 });
 
 async function renderApp() {
@@ -96,6 +109,20 @@ describe("顶栏骨架", () => {
       vi.mocked(invoke).mock.calls.filter(([name]) => name === "get_foreground_app"),
     ).toHaveLength(1);
     expect(screen.getByTestId("foreground-app").textContent).toBe("Visual Studio Code");
+  });
+
+  it("关闭日期时间后顶栏不再渲染时钟，通知仍保留", async () => {
+    useSettingsStore.setState({
+      visibility: {
+        ...useSettingsStore.getState().visibility,
+        datetime: false,
+      },
+    });
+
+    await renderApp();
+
+    expect(screen.queryByTestId("clock")).toBeNull();
+    expect(screen.getByTestId("status-notification")).not.toBeNull();
   });
 
   it("点击 logo 调用 show_popup 并传入锚点矩形，由 Rust 负责落点", async () => {

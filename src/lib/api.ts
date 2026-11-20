@@ -121,6 +121,10 @@ export function getThemeInfo(): Promise<ThemeInfo> {
   return invoke<ThemeInfo>("get_theme_info");
 }
 
+export function setBarHeight(height: number): Promise<void> {
+  return invoke("set_bar_height", { height });
+}
+
 export function hidePopup(): Promise<void> {
   return invoke("hide_popup");
 }

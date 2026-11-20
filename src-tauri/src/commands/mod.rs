@@ -1,6 +1,7 @@
 pub mod notification;
 pub mod popup;
 pub mod power;
+pub mod settings;
 pub mod system;
 pub mod theme;
 pub mod window_control;

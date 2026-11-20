@@ -20,6 +20,8 @@ import { tickClock } from "./lib/clock";
 import { registerSystemEvents } from "./lib/events";
 import { useSystemStore } from "./stores/system";
 import { useThemeStore } from "./stores/theme";
+import { useSettingsStore } from "./stores/settings";
+import { applyBarHeight } from "./lib/settings";
 import { useTranslation } from "react-i18next";
 import { applyTheme } from "./lib/theme";
 
@@ -28,6 +30,7 @@ function ThemeSync() {
   const mode = useThemeStore((state) => state.mode);
   const dark = useThemeStore((state) => state.dark);
   const accent = useThemeStore((state) => state.accent);
+  const barHeight = useSettingsStore((state) => state.barHeight);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +51,10 @@ function ThemeSync() {
   useEffect(() => {
     applyTheme();
   }, [mode, dark, accent]);
+
+  useEffect(() => {
+    applyBarHeight(barHeight);
+  }, [barHeight]);
 
   return null;
 }
@@ -78,6 +85,7 @@ function StatusBar() {
   const time = useSystemStore((state) => state.time);
   const { t, i18n } = useTranslation();
   const clockLanguage = i18n.language === "en-US" ? "en-US" : "zh-CN";
+  const visibility = useSettingsStore((state) => state.visibility);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,12 +171,12 @@ function StatusBar() {
         className="flex items-center justify-end gap-[var(--lithe-icon-gap)]"
         data-testid="zone-right"
       >
-        <ResourceIcon />
-        <WifiIcon />
-        <VolumeIcon />
-        <BatteryIcon />
+        {visibility.resource ? <ResourceIcon /> : null}
+        {visibility.wifi ? <WifiIcon /> : null}
+        {visibility.volume ? <VolumeIcon /> : null}
+        {visibility.battery ? <BatteryIcon /> : null}
         <NotificationIcon />
-        <ClockDisplay time={time} />
+        {visibility.datetime ? <ClockDisplay time={time} /> : null}
       </section>
     </div>
   );
