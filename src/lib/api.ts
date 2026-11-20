@@ -125,6 +125,14 @@ export function setBarHeight(height: number): Promise<void> {
   return invoke("set_bar_height", { height });
 }
 
+export function setFullscreenAutohide(enabled: boolean): Promise<void> {
+  return invoke("set_fullscreen_autohide", { enabled });
+}
+
+export function getFullscreenAutohide(): Promise<boolean> {
+  return invoke<boolean>("get_fullscreen_autohide");
+}
+
 export function hidePopup(): Promise<void> {
   return invoke("hide_popup");
 }

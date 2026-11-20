@@ -1,7 +1,25 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Manager, PhysicalSize};
 
 use crate::window::monitors;
 use crate::window::BarsState;
+
+/// 全屏自动隐藏由设置页控制；默认开启，关闭后轮询只恢复不再隐藏。
+static AUTO_HIDE_FULLSCREEN: AtomicBool = AtomicBool::new(true);
+
+pub fn auto_hide_enabled() -> bool {
+    AUTO_HIDE_FULLSCREEN.load(Ordering::Relaxed)
+}
+
+#[tauri::command]
+pub fn set_fullscreen_autohide(enabled: bool) {
+    AUTO_HIDE_FULLSCREEN.store(enabled, Ordering::Relaxed);
+}
+
+#[tauri::command]
+pub fn get_fullscreen_autohide() -> bool {
+    auto_hide_enabled()
+}
 
 /// 与前端 stores/settings.ts 的 28~36 保持一致。
 pub fn clamp_bar_height(height: u32) -> u32 {
@@ -43,6 +61,16 @@ pub fn set_bar_height(app: AppHandle, height: u32) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fullscreen_autohide_toggles_back_and_forth() {
+        let original = auto_hide_enabled();
+        set_fullscreen_autohide(false);
+        assert!(!get_fullscreen_autohide());
+        set_fullscreen_autohide(true);
+        assert!(get_fullscreen_autohide());
+        set_fullscreen_autohide(original);
+    }
 
     #[test]
     fn bar_height_stays_within_the_design_range() {

@@ -125,6 +125,17 @@ describe("顶栏骨架", () => {
     expect(screen.getByTestId("status-notification")).not.toBeNull();
   });
 
+  it("启用空白双击后，双击顶栏空白处最大化前台窗口", async () => {
+    useSettingsStore.setState({ doubleClickOnEmpty: true });
+
+    await renderApp();
+    await act(async () => {
+      fireEvent.doubleClick(screen.getByTestId("lithe-root"));
+    });
+
+    expect(invoke).toHaveBeenCalledWith("toggle_maximize");
+  });
+
   it("点击 logo 调用 show_popup 并传入锚点矩形，由 Rust 负责落点", async () => {
     await renderApp();
 

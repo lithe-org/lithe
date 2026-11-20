@@ -13,7 +13,13 @@ import {
   WifiIcon,
 } from "./components/status";
 import { WindowsLogo } from "./components/WindowsLogo";
-import { getForegroundApp, getThemeInfo, showPopup } from "./lib/api";
+import {
+  getForegroundApp,
+  getThemeInfo,
+  setFullscreenAutohide,
+  showPopup,
+  toggleMaximize,
+} from "./lib/api";
 import { isPopupLabel, isSettingsLabel } from "./lib/windowRole";
 import { SettingsWindow } from "./components/settings/SettingsWindow";
 import { tickClock } from "./lib/clock";
@@ -31,6 +37,9 @@ function ThemeSync() {
   const dark = useThemeStore((state) => state.dark);
   const accent = useThemeStore((state) => state.accent);
   const barHeight = useSettingsStore((state) => state.barHeight);
+  const autoHideFullscreen = useSettingsStore(
+    (state) => state.autoHideFullscreen,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +64,11 @@ function ThemeSync() {
   useEffect(() => {
     applyBarHeight(barHeight);
   }, [barHeight]);
+
+  useEffect(() => {
+    // 设置窗口与顶栏是同一 bundle 的不同窗口，Rust 侧开关以任一窗口的设置为准。
+    void setFullscreenAutohide(autoHideFullscreen).catch(() => {});
+  }, [autoHideFullscreen]);
 
   return null;
 }
@@ -86,6 +100,9 @@ function StatusBar() {
   const { t, i18n } = useTranslation();
   const clockLanguage = i18n.language === "en-US" ? "en-US" : "zh-CN";
   const visibility = useSettingsStore((state) => state.visibility);
+  const doubleClickOnEmpty = useSettingsStore(
+    (state) => state.doubleClickOnEmpty,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +157,12 @@ function StatusBar() {
     <div
       className="lithe-root grid h-[var(--lithe-bar-height)] w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-[var(--lithe-icon-gap)] bg-[var(--lithe-bar-tint)] px-[var(--lithe-bar-padding-x)] text-[var(--lithe-bar-fg)]"
       data-testid="lithe-root"
+      onDoubleClick={(event) => {
+        // NOACTIVATE 顶栏不会抢焦点，双击空白区域操作的是当前前台窗口。
+        if (doubleClickOnEmpty && event.target === event.currentTarget) {
+          void toggleMaximize();
+        }
+      }}
     >
       <section
         className="flex min-w-0 items-center gap-[var(--lithe-icon-gap)]"

@@ -10,6 +10,8 @@ import {
   getResourceUsage,
   getSystemStatus,
   getThemeInfo,
+  getFullscreenAutohide,
+  setFullscreenAutohide,
   getVolume,
   setVolume,
   toggleMute,
@@ -35,6 +37,7 @@ const rustWindowControl = readFileSync(
   "src-tauri/src/commands/window_control.rs",
   "utf8",
 );
+const rustSettings = readFileSync("src-tauri/src/commands/settings.rs", "utf8");
 
 function rustEventName(constant: string): string {
   const match = rustEvents.match(new RegExp(`pub const ${constant}: &str = "([^"]+)"`));
@@ -144,6 +147,18 @@ describe("前后端通信契约", () => {
     expect(invoke).toHaveBeenCalledWith("get_theme_info");
   });
 
+  it("全屏自动隐藏开关调用 Rust 同名命令", async () => {
+    vi.mocked(invoke).mockResolvedValue(true);
+
+    await setFullscreenAutohide(false);
+    expect(invoke).toHaveBeenCalledWith("set_fullscreen_autohide", {
+      enabled: false,
+    });
+
+    expect(await getFullscreenAutohide()).toBe(true);
+    expect(invoke).toHaveBeenCalledWith("get_fullscreen_autohide");
+  });
+
   it("resizePopup 按内容高度调整面板，宽度由 Rust 固定", async () => {
     await resizePopup(320);
     expect(invoke).toHaveBeenCalledWith("resize_popup", { height: 320 });
@@ -178,6 +193,8 @@ describe("前后端通信契约", () => {
     expect(rustPopupCommands).toContain("pub fn hide_popup(");
     expect(rustPopupCommands).toContain("pub fn resize_popup(");
     expect(rustPopupCommands).toContain("pub fn close_popup(");
+    expect(rustSettings).toContain("pub fn set_fullscreen_autohide(");
+    expect(rustSettings).toContain("pub fn set_bar_height(");
     expect(rustNotification).toContain("pub fn open_notification_center()");
     expect(rustWindowControl).toContain("pub fn toggle_topmost()");
     expect(rustWindowControl).toContain("pub fn toggle_maximize()");

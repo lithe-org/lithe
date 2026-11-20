@@ -111,7 +111,15 @@ pub fn start(app: AppHandle) {
         loop {
             let current = fullscreen_monitor();
             if current != previous {
-                let changes = transitions(previous, current);
+                let changes = if crate::commands::settings::auto_hide_enabled() {
+                    transitions(previous, current)
+                } else {
+                    // 用户在全屏中关掉自动隐藏时，先把已隐藏的顶栏恢复回来。
+                    previous
+                        .map(FullscreenTransition::Show)
+                        .into_iter()
+                        .collect()
+                };
                 let state = FullscreenState {
                     active: current.is_some(),
                 };
