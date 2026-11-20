@@ -88,6 +88,8 @@
       "startup": "Start at login",
       "startupHint": "Automatic startup arrives in M6",
       "language": "Interface language",
+      "langZh": "Chinese",
+      "langEn": "English",
       "checkUpdate": "Check for updates",
       "updateHint": "Update checks arrive in M6"
     },

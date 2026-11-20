@@ -88,6 +88,8 @@
       "startup": "开机自启",
       "startupHint": "自动启动将在 M6 接入",
       "language": "界面语言",
+      "langZh": "中文",
+      "langEn": "English",
       "checkUpdate": "检查更新",
       "updateHint": "更新检查将在 M6 接入"
     },

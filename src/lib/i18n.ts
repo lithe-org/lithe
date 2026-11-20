@@ -29,13 +29,14 @@ i18n.use(initReactI18next).init({
   react: { useSuspense: false },
 });
 
-export function setLanguage(language: Language) {
-  void i18n.changeLanguage(language);
+export function setLanguage(language: Language): Promise<void> {
+  const changed = i18n.changeLanguage(language);
   try {
     window.localStorage.setItem(LANGUAGE_KEY, language);
   } catch {
     // 存不下也不影响本次会话。
   }
+  return changed.then(() => undefined);
 }
 
 export default i18n;

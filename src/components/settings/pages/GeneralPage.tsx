@@ -1,7 +1,59 @@
 import { useTranslation } from "react-i18next";
+import i18n, { setLanguage } from "../../../lib/i18n";
+import type { Language } from "../../../lib/i18n";
 
-/** M5-08 填充具体设置项。 */
+const LANGUAGES: { id: Language; key: string }[] = [
+  { id: "zh-CN", key: "langZh" },
+  { id: "en-US", key: "langEn" },
+];
+
 export function GeneralPage() {
   const { t } = useTranslation();
-  return <p data-testid="general-page">{t("settings.general.updateHint")}</p>;
+  const language: Language = i18n.language === "en-US" ? "en-US" : "zh-CN";
+
+  return (
+    <div className="flex flex-col gap-5 text-[13px]" data-testid="general-page">
+      <section>
+        <label className="flex items-center gap-2">
+          <input disabled type="checkbox" data-testid="startup-toggle" />
+          <span>{t("settings.general.startup")}</span>
+        </label>
+        <p className="mt-1 text-[11px] opacity-60">
+          {t("settings.general.startupHint")}
+        </p>
+      </section>
+
+      <section>
+        <p className="mb-2">{t("settings.general.language")}</p>
+        <div aria-label={t("settings.general.language")} className="flex gap-2" role="group">
+          {LANGUAGES.map(({ id, key }) => (
+            <button
+              aria-pressed={language === id}
+              className="rounded-[var(--lithe-radius)] border border-black/10 px-3 py-1 aria-pressed:border-[var(--lithe-accent)] aria-pressed:text-[var(--lithe-accent)]"
+              data-testid={`language-${id}`}
+              key={id}
+              onClick={() => void setLanguage(id)}
+              type="button"
+            >
+              {t(`settings.general.${key}`)}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <button
+          className="rounded-[var(--lithe-radius)] border border-black/10 px-3 py-1 disabled:opacity-50"
+          data-testid="check-updates"
+          disabled
+          type="button"
+        >
+          {t("settings.general.checkUpdate")}
+        </button>
+        <p className="mt-1 text-[11px] opacity-60">
+          {t("settings.general.updateHint")}
+        </p>
+      </section>
+    </div>
+  );
 }
