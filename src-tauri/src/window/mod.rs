@@ -326,6 +326,14 @@ mod tests {
     }
 
     #[test]
+    fn second_launch_activates_existing_settings_window() {
+        let lib = include_str!("../lib.rs");
+        assert!(lib.contains("tauri_plugin_single_instance::init"));
+        assert!(lib.contains("get_webview_window(\"settings\")"));
+        assert!(lib.contains("let _ = window.show();"));
+    }
+
+    #[test]
     fn settings_window_is_a_normal_decorated_window() {
         let config = include_str!("../../tauri.conf.json");
         assert!(config.contains("\"label\": \"settings\""));
