@@ -29,6 +29,17 @@ describe("主题系统", () => {
     expect(root.style.getPropertyValue("--lithe-accent")).toBe("#AABBCC");
   });
 
+  it("自定义强调色不会被系统主题变化覆盖", () => {
+    useThemeStore.getState().setAccent("#112233");
+    useThemeStore.getState().applySystemTheme({
+      dark: true,
+      accent: "#AABBCC",
+    });
+
+    expect(useThemeStore.getState().accent).toBe("#112233");
+    expect(useThemeStore.getState().dark).toBe(true);
+  });
+
   it("模式选择持久化，重启后仍生效", () => {
     useThemeStore.getState().setMode("light");
     expect(window.localStorage.getItem("lithe.theme-mode")).toBe("light");

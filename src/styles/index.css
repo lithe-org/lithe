@@ -20,6 +20,11 @@
   --lithe-accent: #0078d4;
 }
 
+/* 选中态与强调文字统一取色，切换强调色时无需重渲染整棵组件树。 */
+.lithe-accent-text {
+  color: var(--lithe-accent);
+}
+
 html,
 body,
 #root {

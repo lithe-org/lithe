@@ -5,6 +5,7 @@ import type { ControlModule } from "../../lib/panels";
 import { BatteryPanel } from "./panels/BatteryPanel";
 import { NetworkPanel } from "./panels/NetworkPanel";
 import { VolumePanel } from "./panels/VolumePanel";
+import { ThemePanel } from "./panels/ThemePanel";
 
 const MODULES: { id: ControlModule; title: string; placeholder: string }[] = [
   { id: "network", title: "网络", placeholder: "Wi-Fi 连接与信号（M3-11 填充）" },
@@ -19,6 +20,7 @@ const PANELS: Partial<Record<ControlModule, () => ReactElement>> = {
   network: NetworkPanel,
   volume: VolumePanel,
   battery: BatteryPanel,
+  theme: ThemePanel,
 };
 
 interface ControlCenterProps {
