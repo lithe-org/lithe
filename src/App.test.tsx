@@ -55,7 +55,9 @@ describe("顶栏骨架", () => {
         .getByTestId("zone-center")
         .querySelector('[data-testid="window-controls"]'),
     ).not.toBeNull();
-    expect(screen.getByTestId("clock").textContent).toMatch(/^\d{2}:\d{2}$/);
+    expect(screen.getByTestId("clock").textContent).toMatch(
+      /^\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}$/,
+    );
   });
 
   it("store setter 变更后左侧应用名即时刷新，验证订阅链路可用", async () => {

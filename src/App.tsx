@@ -75,7 +75,8 @@ function StatusBar() {
     (state) => state.setForegroundControllable,
   );
   const time = useSystemStore((state) => state.time);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const clockLanguage = i18n.language === "en-US" ? "en-US" : "zh-CN";
 
   useEffect(() => {
     let cancelled = false;
@@ -119,12 +120,12 @@ function StatusBar() {
     // 每秒检查一次，但 minute 未变时不写 store，顶栏不会跟着秒针重渲染。
     const tick = () => {
       const { time: current, setTime } = useSystemStore.getState();
-      tickClock(current, new Date(), setTime);
+      tickClock(current, new Date(), setTime, clockLanguage);
     };
     tick();
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [clockLanguage]);
 
   return (
     <div
