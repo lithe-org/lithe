@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getPopupState } from "../lib/api";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { EVENTS } from "../lib/events";
@@ -16,6 +17,20 @@ export function PopupHost() {
     // 池中窗口复用，内容类型由 Rust 在每次 show 时注入。
     let cancelled = false;
     let unlisten: UnlistenFn | undefined;
+
+    const applyState = (state: { kind: string; focus?: string } | null) => {
+      if (!state || cancelled) {
+        return;
+      }
+      setKind(state.kind);
+      setFocus((state.focus as ControlModule | undefined) ?? undefined);
+    };
+
+    // 事件可能赶在 listener 注册前丢失，挂载后拉一次当前状态补上。
+    const pull = () => {
+      void getPopupState().then(applyState).catch(() => {});
+    };
+
     listen<{ kind: string; focus?: ControlModule }>(
       EVENTS.popupShow,
       (event) => {
@@ -28,13 +43,24 @@ export function PopupHost() {
           fn();
         } else {
           unlisten = fn;
+          pull();
         }
       })
       .catch(() => {
-        // 订阅失败时保持空面板，不阻塞窗口显示。
+        // 订阅失败时仍靠拉取兜底。
       });
+
+    // 显示的窗口持续低频拉取，彻底避免事件丢失留下空白面板；
+    // 池里隐藏的窗口不轮询，不产生无谓 IPC。
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        pull();
+      }
+    }, 150);
+
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
       unlisten?.();
     };
   }, []);

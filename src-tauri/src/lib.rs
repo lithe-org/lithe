@@ -25,6 +25,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::notification::open_notification_center,
             commands::popup::close_popup,
+            commands::popup::get_popup_state,
             commands::popup::hide_popup,
             commands::popup::resize_popup,
             commands::popup::show_popup,

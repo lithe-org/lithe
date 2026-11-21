@@ -62,6 +62,25 @@ describe("下拉窗口宿主", () => {
     expect(screen.getByTestId("control-module-network")).not.toBeNull();
   });
 
+  it("注入事件丢失时靠主动拉取补上面板内容", async () => {
+    vi.mocked(invoke).mockImplementation(async (command) => {
+      if (command === "get_popup_state") {
+        return { kind: "logo" };
+      }
+      return undefined;
+    });
+
+    await act(async () => {
+      render(<PopupHost />);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(invoke).toHaveBeenCalledWith("get_popup_state");
+    expect(screen.getByTestId("logo-menu")).not.toBeNull();
+  });
+
   it("按 Esc 调用 hide_popup 收起面板", () => {
     render(<PopupHost />);
     fireEvent.keyDown(window, { key: "Escape" });

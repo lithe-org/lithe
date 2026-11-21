@@ -10,6 +10,7 @@ import {
   getResourceUsage,
   getSystemStatus,
   getThemeInfo,
+  getPopupState,
   getFullscreenAutohide,
   setFullscreenAutohide,
   getVolume,
@@ -145,6 +146,14 @@ describe("前后端通信契约", () => {
 
     expect(await getThemeInfo()).toEqual({ dark: true, accent: "#AABBCC" });
     expect(invoke).toHaveBeenCalledWith("get_theme_info");
+  });
+
+  it("getPopupState 提供面板内容拉取兜底", async () => {
+    vi.mocked(invoke).mockResolvedValue({ kind: "logo" });
+
+    expect(await getPopupState()).toEqual({ kind: "logo" });
+    expect(invoke).toHaveBeenCalledWith("get_popup_state");
+    expect(rustPopupCommands).toContain("pub fn get_popup_state(");
   });
 
   it("全屏自动隐藏开关调用 Rust 同名命令", async () => {

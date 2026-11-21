@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, PhysicalPosition, PhysicalSize, State, WebviewWindow};
 
@@ -9,10 +10,19 @@ const POPUP_GAP: i32 = 4;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct PopupShowPayload {
+pub struct PopupShowPayload {
     kind: String,
     /// 控制中心打开时要聚焦的模块（network / volume / battery / resource / theme）。
     focus: Option<String>,
+}
+
+/// 最近一次展示的面板类型。事件可能赶在池窗口 listener 注册之前到达，
+/// 前端挂载后主动拉一次即可补上，避免只显示空白半透明面板。
+static CURRENT: Mutex<Option<PopupShowPayload>> = Mutex::new(None);
+
+#[tauri::command]
+pub fn get_popup_state() -> Option<PopupShowPayload> {
+    CURRENT.lock().ok()?.clone()
 }
 
 #[tauri::command]
@@ -48,6 +58,9 @@ pub fn show_popup(
         .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
     let payload = PopupShowPayload { kind, focus };
+    if let Ok(mut current) = CURRENT.lock() {
+        *current = Some(payload.clone());
+    }
     // 池中 webview 长期存活，但首次 emit 仍可能赶在前端 listener 注册之前。
     // 显示前后各注入一次；前端 setState 幂等，覆盖两种时序，避免空白面板。
     popup

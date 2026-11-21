@@ -28,6 +28,11 @@ export function getSystemStatus(): Promise<SystemStatus> {
   return invoke<SystemStatus>("get_system_status");
 }
 
+/** 面板内容由事件推送，这里提供拉取兜底，防止 listener 注册晚于事件。 */
+export function getPopupState(): Promise<{ kind: string; focus?: string } | null> {
+  return invoke<{ kind: string; focus?: string } | null>("get_popup_state");
+}
+
 export interface ResourceUsage {
   cpuPercent: number;
   memoryPercent: number;
