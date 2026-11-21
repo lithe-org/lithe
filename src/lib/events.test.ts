@@ -39,6 +39,28 @@ describe("系统事件订阅", () => {
     expect(useSystemStore.getState().foregroundApp).toBe("记事本");
   });
 
+  it("系统组件的前台事件名字为空时也能安全写入 store", async () => {
+    let handler: ((event: unknown) => void) | undefined;
+    vi.mocked(listen).mockImplementation(async (eventName, callback) => {
+      if (eventName === EVENTS.foregroundChanged) {
+        handler = callback as unknown as (event: unknown) => void;
+      }
+      return () => {};
+    });
+
+    await registerSystemEvents();
+    handler?.({
+      payload: {
+        name: "",
+        executable: "ShellExperienceHost.exe",
+        controllable: false,
+      },
+    });
+
+    expect(useSystemStore.getState().foregroundApp).toBe("");
+    expect(useSystemStore.getState().foregroundControllable).toBe(false);
+  });
+
   it("Wi-Fi 状态变化写入 store，供图标决定显隐与强度", async () => {
     let handler: ((event: unknown) => void) | undefined;
     vi.mocked(listen).mockImplementation(async (eventName, callback) => {

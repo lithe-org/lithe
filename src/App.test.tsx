@@ -87,6 +87,18 @@ describe("顶栏骨架", () => {
     expect(screen.getByTestId("foreground-app").textContent).toBe("记事本");
   });
 
+  it("系统组件名字为空时不渲染应用名与窗口控制按钮", async () => {
+    await renderApp();
+
+    act(() => {
+      useSystemStore.getState().setForegroundApp("");
+      useSystemStore.getState().setForegroundControllable(false);
+    });
+
+    expect(screen.getByTestId("foreground-app").textContent).toBe("");
+    expect(screen.queryByTestId("window-controls")).toBeNull();
+  });
+
   it("右侧时间读取 store 并在变更时刷新", async () => {
     await renderApp();
 
