@@ -129,6 +129,10 @@ fn create_popup(app: &AppHandle, index: usize) -> tauri::Result<WebviewWindow> {
         .shadow(false)
         .build()?;
 
+    // 面板与顶栏一样叠 Acrylic，否则桌面图标会透过半透明着色干扰阅读。
+    // 只在预创建时施加一次；popup 需要焦点响应点击与 Esc，不能设 NOACTIVATE。
+    super::apply_acrylic(&window);
+
     // 失焦即关闭：点击面板外部或切到其他窗口都应收回，并归还池复用。
     let app_handle = app.clone();
     let owned = window.clone();
@@ -168,6 +172,15 @@ mod tests {
         slots.release(taken);
         assert_eq!(slots.len(), 1);
         assert_eq!(slots.acquire(), Some(1));
+    }
+
+    #[test]
+    fn popup_applies_acrylic_without_disabling_focus() {
+        // 面板要毛玻璃打底，但必须保留焦点才能点菜单与按 Esc。
+        let source = include_str!("popup_pool.rs");
+        let production = source.split("#[cfg(test)]").next().unwrap();
+        assert!(production.contains("super::apply_acrylic(&window)"));
+        assert!(!production.contains("WS_EX_NOACTIVATE"));
     }
 
     #[test]

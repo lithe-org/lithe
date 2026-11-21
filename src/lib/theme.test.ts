@@ -26,7 +26,22 @@ describe("主题系统", () => {
     expect(root.style.getPropertyValue("--lithe-bar-tint")).toBe(
       "rgba(18, 18, 20, 0.62)",
     );
+    expect(root.style.getPropertyValue("--lithe-panel-tint")).toBe(
+      "rgba(18, 18, 20, 0.8)",
+    );
     expect(root.style.getPropertyValue("--lithe-accent")).toBe("#AABBCC");
+  });
+
+  it("浅色面板着色比顶栏更实，保证菜单文字可读", () => {
+    applyTheme();
+
+    const root = document.documentElement;
+    expect(root.style.getPropertyValue("--lithe-bar-tint")).toBe(
+      "rgba(255, 255, 255, 0.32)",
+    );
+    expect(root.style.getPropertyValue("--lithe-panel-tint")).toBe(
+      "rgba(255, 255, 255, 0.8)",
+    );
   });
 
   it("自定义强调色不会被系统主题变化覆盖", () => {

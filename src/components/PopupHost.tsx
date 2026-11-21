@@ -78,7 +78,7 @@ export function PopupHost() {
 
   return (
     <div
-      className="h-full w-full bg-[var(--lithe-bar-tint)]"
+      className="h-full w-full bg-[var(--lithe-panel-tint)]"
       data-testid="popup-host"
     >
       {kind === "logo" ? <LogoMenu /> : null}

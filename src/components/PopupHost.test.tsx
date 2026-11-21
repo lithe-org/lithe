@@ -23,6 +23,8 @@ describe("下拉窗口宿主", () => {
 
     expect(host.className).toContain("h-full");
     expect(host.className).toContain("w-full");
+    expect(host.className).toContain("bg-[var(--lithe-panel-tint)]");
+    expect(host.className).not.toContain("bar-tint");
     expect(host.childElementCount).toBe(0);
   });
 

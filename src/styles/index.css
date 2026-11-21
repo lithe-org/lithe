@@ -53,6 +53,8 @@
   --lithe-radius: 6px;
   /* 毛玻璃之上再压一层半透明着色，保证任意壁纸下文字对比度都够。 */
   --lithe-bar-tint: rgba(255, 255, 255, 0.32);
+  /* 下拉面板着色更实，叠加 Acrylic 后仍能读清菜单文字。 */
+  --lithe-panel-tint: rgba(255, 255, 255, 0.8);
   --lithe-bar-fg: rgba(18, 18, 20, 0.92);
   /* 强调色默认跟随 Windows，用户在控制中心覆盖后由 JS 改写。 */
   --lithe-accent: #0078d4;

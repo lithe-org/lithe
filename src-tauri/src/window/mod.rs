@@ -293,7 +293,7 @@ fn set_no_activate(window: &WebviewWindow) {
     }
 }
 
-fn apply_acrylic(window: &WebviewWindow) {
+pub(crate) fn apply_acrylic(window: &WebviewWindow) {
     if let Ok(hwnd) = window.hwnd() {
         let hwnd_sys = (hwnd.0 as isize) as *mut std::ffi::c_void;
         if backdrop::apply_acrylic_backdrop(hwnd_sys) {
