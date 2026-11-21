@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 const POOL_SIZE: usize = 2;
@@ -45,6 +46,13 @@ pub struct PopupPool {
     slots: PopupSlots<WebviewWindow>,
     /// 正在显示的面板；顶栏点通知/时间时需要显式收起它们（顶栏不抢焦点，失焦事件不一定触发）。
     active: Mutex<Vec<WebviewWindow>>,
+    /// 刚取出槽位的时间，用来忽略显示瞬间的失焦竞态（BUG 3）。
+    last_acquire: Mutex<Instant>,
+}
+
+/// 面板刚显示时焦点还在切换，这个窗口内的失焦事件不能当作「用户点到外面」。
+pub fn should_ignore_blur(elapsed: Duration) -> bool {
+    elapsed < Duration::from_millis(250)
 }
 
 impl PopupPool {
@@ -56,12 +64,16 @@ impl PopupPool {
         Ok(Self {
             slots: PopupSlots::new(windows),
             active: Mutex::new(Vec::new()),
+            last_acquire: Mutex::new(Instant::now() - Duration::from_secs(1)),
         })
     }
 
     pub fn acquire(&self) -> Option<WebviewWindow> {
         // 只取窗口不显示：调用方先定位再 show，避免面板先闪到上一次的位置。
         let window = self.slots.acquire()?;
+        if let Ok(mut last) = self.last_acquire.lock() {
+            *last = Instant::now();
+        }
         if let Ok(mut active) = self.active.lock() {
             active.push(window.clone());
         }
@@ -77,6 +89,14 @@ impl PopupPool {
         if !self.slots.contains(|idle| idle.label() == window.label()) {
             self.slots.release(window);
         }
+    }
+
+    /// 刚显示后的短暂失焦是焦点切换竞态，不是用户点击了面板外部。
+    pub fn is_blur_during_show(&self) -> bool {
+        self.last_acquire
+            .lock()
+            .map(|last| should_ignore_blur(last.elapsed()))
+            .unwrap_or(false)
     }
 
     /// 收起所有正在显示的面板，返回被收起的数量。
@@ -115,6 +135,10 @@ fn create_popup(app: &AppHandle, index: usize) -> tauri::Result<WebviewWindow> {
     window.on_window_event(move |event| {
         if let WindowEvent::Focused(false) = event {
             if let Some(pool) = app_handle.try_state::<PopupPool>() {
+                if pool.is_blur_during_show() {
+                    // 面板刚 show 时的焦点切换不能当成「点外面」，否则所有面板秒关。
+                    return;
+                }
                 pool.release(owned.clone());
             }
         }
@@ -144,6 +168,12 @@ mod tests {
         slots.release(taken);
         assert_eq!(slots.len(), 1);
         assert_eq!(slots.acquire(), Some(1));
+    }
+
+    #[test]
+    fn blur_right_after_show_is_ignored_but_later_blur_closes() {
+        assert!(should_ignore_blur(Duration::from_millis(30)));
+        assert!(!should_ignore_blur(Duration::from_millis(600)));
     }
 
     #[test]

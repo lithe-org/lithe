@@ -66,6 +66,12 @@ fn foreground_rect() -> Option<Bounds> {
     if hwnd.is_null() {
         return None;
     }
+    // 桌面/任务栏窗口同样铺满整屏，但不是全屏应用，不能据此隐藏顶栏。
+    if crate::status::foreground::is_shell_window_class(
+        &crate::status::foreground::window_class(hwnd),
+    ) {
+        return None;
+    }
     let mut raw: RECT = unsafe { std::mem::zeroed() };
     if unsafe { GetWindowRect(hwnd, &mut raw) } == 0 {
         return None;
@@ -157,6 +163,13 @@ mod tests {
             right,
             bottom,
         }
+    }
+
+    #[test]
+    fn shell_windows_are_never_fullscreen_targets() {
+        // 点击桌面/任务栏曾误判为全屏并隐藏顶栏，必须保留这层过滤。
+        let source = include_str!("fullscreen.rs");
+        assert!(source.contains("is_shell_window_class"));
     }
 
     #[test]

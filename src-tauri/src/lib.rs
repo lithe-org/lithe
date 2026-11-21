@@ -4,6 +4,8 @@ pub mod status;
 pub mod window;
 
 use tauri::Manager;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -66,6 +68,43 @@ pub fn run() {
             window::monitors::watch(app.handle().clone());
             // 预创建下拉窗口，避免首次点击时现建 WebView 的可见延迟。
             app.manage(window::popup_pool::PopupPool::new(app.handle())?);
+
+            // 系统托盘：左键打开设置，右键菜单提供设置与退出。
+            let settings_item =
+                MenuItem::with_id(app, "settings", "设置", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&settings_item, &quit_item])?;
+            let _tray = TrayIconBuilder::new()
+                .icon(tauri::image::Image::<'static>::from_bytes(include_bytes!(
+                    "../icons/32x32.png"
+                ))?)
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "settings" => {
+                        if let Some(window) = app.get_webview_window("settings") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("settings") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
             Ok(())
         })
         .build(tauri::generate_context!())

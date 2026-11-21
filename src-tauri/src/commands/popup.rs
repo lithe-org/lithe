@@ -47,14 +47,11 @@ pub fn show_popup(
     popup
         .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
-    popup.show().map_err(|error| error.to_string())?;
-    // 池中页面上电即加载，先显示再注入内容不会丢事件。
+    // 先注入内容再显示：池中 webview 即使隐藏也在渲染，避免首帧空白/事件竞态。
     popup
-        .emit(
-            EVENT_POPUP_SHOW,
-            PopupShowPayload { kind, focus },
-        )
+        .emit(EVENT_POPUP_SHOW, PopupShowPayload { kind, focus })
         .map_err(|error| error.to_string())?;
+    popup.show().map_err(|error| error.to_string())?;
     popup.set_focus().map_err(|error| error.to_string())?;
     Ok(())
 }

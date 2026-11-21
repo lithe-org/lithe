@@ -233,8 +233,6 @@ fn configure_bar(window: &WebviewWindow, display: &Display) -> Result<(), String
         .set_position(PhysicalPosition::new(origin_x, origin_y))
         .map_err(|error| error.to_string())?;
 
-    set_no_activate(window);
-
     // 配置 visible=false，几何与样式就位后再显示，避免闪出占位窗口。
     window.show().map_err(|error| error.to_string())?;
 
@@ -252,6 +250,9 @@ fn configure_bar(window: &WebviewWindow, display: &Display) -> Result<(), String
 
     pin_position(window, origin_x, origin_y);
     apply_acrylic(window);
+    // DWM 应用毛玻璃会重建窗口样式，NOACTIVATE 必须最后再设一次，
+    // 否则点击顶栏仍会把前台焦点抢过来（BUG 4）。
+    set_no_activate(window);
     Ok(())
 }
 
@@ -331,6 +332,25 @@ mod tests {
         assert!(lib.contains("tauri_plugin_single_instance::init"));
         assert!(lib.contains("get_webview_window(\"settings\")"));
         assert!(lib.contains("let _ = window.show();"));
+    }
+
+    #[test]
+    fn tray_icon_opens_settings_and_can_quit() {
+        let lib = include_str!("../lib.rs");
+        assert!(lib.contains("TrayIconBuilder::new()"));
+        assert!(lib.contains("icons/32x32.png"));
+        assert!(lib.contains("\"quit\" => app.exit(0)"));
+    }
+
+    #[test]
+    fn no_activate_is_applied_after_acrylic() {
+        // DWM 应用毛玻璃会重建扩展样式，早先设置会被冲掉（BUG 4）。
+        let source = include_str!("mod.rs");
+        // 只看生产代码，测试字符串本身也会命中函数名。
+        let production = source.split("#[cfg(test)]").next().unwrap();
+        let acrylic = production.find("apply_acrylic(window);").unwrap();
+        let no_activate = production.rfind("set_no_activate(window);").unwrap();
+        assert!(no_activate > acrylic);
     }
 
     #[test]

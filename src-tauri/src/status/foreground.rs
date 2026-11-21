@@ -35,9 +35,18 @@ pub struct ForegroundSnapshot {
     pub description: Option<String>,
 }
 
-/// 桌面窗口类属于 explorer.exe；按普通进程读会显示「Windows 文件资源管理器」。
+/// 桌面与任务栏窗口类都属于 explorer.exe，按普通进程读会显示「Windows 文件资源管理器」。
 pub fn desktop_name(class_name: &str) -> Option<&'static str> {
-    matches!(class_name, "Progman" | "WorkerW").then_some("桌面")
+    match class_name {
+        "Progman" | "WorkerW" => Some("桌面"),
+        "Shell_TrayWnd" | "Shell_SecondaryTrayWnd" => Some("任务栏"),
+        _ => None,
+    }
+}
+
+/// shell 窗口铺满屏幕但不是全屏应用，必须排除，否则会误隐藏顶栏。
+pub fn is_shell_window_class(class_name: &str) -> bool {
+    desktop_name(class_name).is_some()
 }
 
 pub fn capture_app() -> ForegroundApp {
@@ -75,10 +84,7 @@ pub fn is_controllable_window(hwnd: HWND) -> bool {
         return false;
     }
     let class = window_class(hwnd);
-    if matches!(
-        class.as_str(),
-        "Progman" | "WorkerW" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"
-    ) {
+    if is_shell_window_class(&class) {
         return false;
     }
     let pid = window_process_id(hwnd);
@@ -161,7 +167,7 @@ fn snapshot_for(hwnd: HWND) -> ForegroundSnapshot {
     }
 }
 
-fn window_class(hwnd: HWND) -> String {
+pub fn window_class(hwnd: HWND) -> String {
     // FFI 边界收在显式 unsafe 块内（edition 2024）。
     unsafe {
         let mut buffer = [0u16; CLASS_BUFFER_CHARS];
@@ -344,7 +350,11 @@ mod tests {
         // 桌面窗口属于 explorer.exe，按普通进程读会显示「Windows 文件资源管理器」。
         assert_eq!(desktop_name("Progman"), Some("桌面"));
         assert_eq!(desktop_name("WorkerW"), Some("桌面"));
+        assert_eq!(desktop_name("Shell_TrayWnd"), Some("任务栏"));
+        assert_eq!(desktop_name("Shell_SecondaryTrayWnd"), Some("任务栏"));
         assert_eq!(desktop_name("Chrome_WidgetWin_1"), None);
+        assert!(is_shell_window_class("Shell_TrayWnd"));
+        assert!(!is_shell_window_class("Chrome_WidgetWin_1"));
     }
 
     #[test]

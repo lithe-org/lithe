@@ -5,23 +5,26 @@ import { WindowsLogo } from "./WindowsLogo";
 afterEach(() => cleanup());
 
 describe("Windows 11 logo", () => {
-  it("用四格 SVG 绘制，颜色取 currentColor 跟随主题前景色", () => {
-    const { container } = render(<WindowsLogo />);
-    const svg = container.querySelector("svg");
+  it("使用用户提供的 windows-11.svg 资源", () => {
+    render(<WindowsLogo />);
 
-    expect(svg).not.toBeNull();
-    expect(svg?.getAttribute("data-testid")).toBe("windows-logo");
-
-    const panes = Array.from(svg?.querySelectorAll("rect") ?? []);
-    expect(panes).toHaveLength(4);
-    // currentColor 让亮/暗主题只切换 CSS 变量，不用维护两套图标。
-    expect(panes.every((pane) => pane.getAttribute("fill") === "currentColor")).toBe(true);
+    const logo = document.querySelector(
+      '[data-testid="windows-logo"]',
+    ) as HTMLImageElement;
+    expect(logo).not.toBeNull();
+    expect(logo.tagName).toBe("IMG");
+    // Vite 会把小 SVG 内联成 data URL，解码后仍是用户提供的那份图标。
+    expect(logo.getAttribute("src")).toContain("data:image/svg+xml");
+    expect(decodeURIComponent(logo.getAttribute("src") ?? "")).toContain(
+      "M0 14v14h28V0H0z",
+    );
   });
 
   it("尺寸走设计 token，与状态图标的 16px 基线保持一致", () => {
-    const { container } = render(<WindowsLogo />);
-    const className = container.querySelector("svg")?.getAttribute("class") ?? "";
+    render(<WindowsLogo />);
 
+    const className =
+      document.querySelector('[data-testid="windows-logo"]')?.getAttribute("class") ?? "";
     expect(className).toContain("size-[var(--lithe-icon-size)]");
   });
 });

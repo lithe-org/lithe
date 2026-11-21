@@ -50,7 +50,10 @@ describe("顶栏骨架", () => {
 
     expect(container.querySelector('[data-testid="lithe-root"]')).not.toBeNull();
     expect(screen.queryByText(/Welcome to Tauri/)).toBeNull();
-    expect(container.querySelector("img")).toBeNull();
+    // Logo 图标走用户提供的 SVG 资源，模板里的示例图片必须已经清掉。
+    const images = Array.from(container.querySelectorAll("img"));
+    expect(images).toHaveLength(1);
+    expect(images[0].getAttribute("data-testid")).toBe("windows-logo");
     expect(container.querySelector("form")).toBeNull();
   });
 
