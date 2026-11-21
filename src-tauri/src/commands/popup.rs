@@ -47,11 +47,16 @@ pub fn show_popup(
     popup
         .set_position(PhysicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
-    // 先注入内容再显示：池中 webview 即使隐藏也在渲染，避免首帧空白/事件竞态。
+    let payload = PopupShowPayload { kind, focus };
+    // 池中 webview 长期存活，但首次 emit 仍可能赶在前端 listener 注册之前。
+    // 显示前后各注入一次；前端 setState 幂等，覆盖两种时序，避免空白面板。
     popup
-        .emit(EVENT_POPUP_SHOW, PopupShowPayload { kind, focus })
+        .emit(EVENT_POPUP_SHOW, payload.clone())
         .map_err(|error| error.to_string())?;
     popup.show().map_err(|error| error.to_string())?;
+    popup
+        .emit(EVENT_POPUP_SHOW, payload)
+        .map_err(|error| error.to_string())?;
     popup.set_focus().map_err(|error| error.to_string())?;
     Ok(())
 }

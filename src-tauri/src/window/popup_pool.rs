@@ -52,7 +52,7 @@ pub struct PopupPool {
 
 /// 面板刚显示时焦点还在切换，这个窗口内的失焦事件不能当作「用户点到外面」。
 pub fn should_ignore_blur(elapsed: Duration) -> bool {
-    elapsed < Duration::from_millis(250)
+    elapsed < Duration::from_millis(500)
 }
 
 impl PopupPool {
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn blur_right_after_show_is_ignored_but_later_blur_closes() {
         assert!(should_ignore_blur(Duration::from_millis(30)));
-        assert!(!should_ignore_blur(Duration::from_millis(600)));
+        assert!(!should_ignore_blur(Duration::from_millis(800)));
     }
 
     #[test]
