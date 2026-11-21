@@ -327,11 +327,12 @@ mod tests {
     }
 
     #[test]
-    fn second_launch_activates_existing_settings_window() {
+    fn settings_window_is_opened_through_one_command_everywhere() {
+        // 注册 + 单实例 + 托盘菜单 + 托盘左键必须共用同一命令，
+        // 否则关闭后重建的兜底只覆盖部分入口。
         let lib = include_str!("../lib.rs");
-        assert!(lib.contains("tauri_plugin_single_instance::init"));
-        assert!(lib.contains("get_webview_window(\"settings\")"));
-        assert!(lib.contains("let _ = window.show();"));
+        let count = lib.matches("show_settings_window").count();
+        assert!(count >= 4, "设置窗口入口应统一，实际出现 {count} 次");
     }
 
     #[test]

@@ -16,10 +16,7 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             // 第二次启动不新开进程，直接把已有实例的设置窗口调到前台。
-            if let Some(window) = app.get_webview_window("settings") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            let _ = commands::settings::show_settings_window(app.clone());
         }))
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -37,6 +34,7 @@ pub fn run() {
             commands::power::shutdown,
             commands::power::sleep,
             commands::settings::get_fullscreen_autohide,
+            commands::settings::show_settings_window,
             commands::settings::set_bar_height,
             commands::settings::set_fullscreen_autohide,
             commands::system::get_foreground_app,
@@ -83,10 +81,7 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "settings" => {
-                        if let Some(window) = app.get_webview_window("settings") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
+                        let _ = commands::settings::show_settings_window(app.clone());
                     }
                     "quit" => app.exit(0),
                     _ => {}
@@ -99,10 +94,7 @@ pub fn run() {
                     } = event
                     {
                         let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("settings") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
+                        let _ = commands::settings::show_settings_window(app.clone());
                     }
                 })
                 .build(app)?;

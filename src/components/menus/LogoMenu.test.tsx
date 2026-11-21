@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { act } from "@testing-library/react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -67,7 +66,7 @@ describe("Logo 菜单", () => {
     await act(async () => {
       fireEvent.click(settings);
     });
-    expect(WebviewWindow.getByLabel).toHaveBeenCalledWith("settings");
+    expect(invoke).toHaveBeenCalledWith("show_settings_window");
     expect(invoke).not.toHaveBeenCalledWith("open_system_info");
   });
 });

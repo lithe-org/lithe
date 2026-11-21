@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Manager, PhysicalSize};
+use tauri::{AppHandle, Manager, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
 
 use crate::window::monitors;
 use crate::window::BarsState;
@@ -19,6 +19,49 @@ pub fn set_fullscreen_autohide(enabled: bool) {
 #[tauri::command]
 pub fn get_fullscreen_autohide() -> bool {
     auto_hide_enabled()
+}
+
+// 与 tauri.conf.json 的 settings 窗口声明逐项对齐，由单测钉住。
+const SETTINGS_LABEL: &str = "settings";
+const SETTINGS_TITLE: &str = "Lithe Settings";
+const SETTINGS_WIDTH: f64 = 820.0;
+const SETTINGS_HEIGHT: f64 = 600.0;
+const SETTINGS_MIN_WIDTH: f64 = 640.0;
+const SETTINGS_MIN_HEIGHT: f64 = 420.0;
+
+/// 唯一的设置窗口打开入口：已存在就显示，被用户关掉后按配置重建。
+/// 前端从 popup 调用自定义命令，无需 `get_all_windows` 权限。
+#[tauri::command]
+pub fn show_settings_window(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window(SETTINGS_LABEL) {
+        window.show().map_err(|error| error.to_string())?;
+        window.set_focus().map_err(|error| error.to_string())?;
+        return Ok(());
+    }
+
+    let window = WebviewWindowBuilder::new(
+        &app,
+        SETTINGS_LABEL,
+        WebviewUrl::App("index.html".into()),
+    )
+    .title(SETTINGS_TITLE)
+    .inner_size(SETTINGS_WIDTH, SETTINGS_HEIGHT)
+    .min_inner_size(SETTINGS_MIN_WIDTH, SETTINGS_MIN_HEIGHT)
+    .center()
+    .decorations(true)
+    .transparent(false)
+    .always_on_top(false)
+    .skip_taskbar(false)
+    .focused(true)
+    .resizable(true)
+    .shadow(true)
+    .visible(false)
+    .build()
+    .map_err(|error| error.to_string())?;
+
+    window.show().map_err(|error| error.to_string())?;
+    window.set_focus().map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 /// 与前端 stores/settings.ts 的 28~36 保持一致。
@@ -70,6 +113,35 @@ mod tests {
         set_fullscreen_autohide(true);
         assert!(get_fullscreen_autohide());
         set_fullscreen_autohide(original);
+    }
+
+    #[test]
+    fn settings_window_geometry_matches_config() {
+        let config: serde_json::Value =
+            serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
+        let window = config["app"]["windows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["label"] == "settings")
+            .expect("tauri.conf.json 应声明 settings 窗口");
+
+        assert_eq!(window["title"].as_str(), Some(SETTINGS_TITLE));
+        assert_eq!(window["width"].as_f64(), Some(SETTINGS_WIDTH));
+        assert_eq!(window["height"].as_f64(), Some(SETTINGS_HEIGHT));
+        assert_eq!(window["minWidth"].as_f64(), Some(SETTINGS_MIN_WIDTH));
+        assert_eq!(window["minHeight"].as_f64(), Some(SETTINGS_MIN_HEIGHT));
+        assert_eq!(window["decorations"].as_bool(), Some(true));
+        assert_eq!(window["visible"].as_bool(), Some(false));
+    }
+
+    #[test]
+    fn show_settings_window_recreates_when_missing() {
+        // 只 show 不重建会让关闭后的第二次托盘点击静默失败。
+        let source = include_str!("settings.rs");
+        let production = source.split("#[cfg(test)]").next().unwrap();
+        assert!(production.contains("WebviewWindowBuilder::new"));
+        assert!(production.contains("SETTINGS_LABEL"));
     }
 
     #[test]

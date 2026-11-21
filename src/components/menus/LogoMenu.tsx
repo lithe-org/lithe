@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { hidePopup } from "../../lib/api";
-import { showSettingsWindow } from "../../lib/windows";
+import { hidePopup, showSettingsWindow } from "../../lib/api";
 
 interface MenuEntry {
   id: string;

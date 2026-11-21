@@ -89,6 +89,7 @@ mod tests {
             .next()
             .expect("注册列表未闭合");
 
+        assert!(handler.contains("show_settings_window"));
         assert!(handler.contains("get_foreground_app"));
         assert!(handler.contains("get_system_status"));
         assert!(handler.contains("show_popup"));

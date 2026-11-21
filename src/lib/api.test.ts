@@ -11,6 +11,7 @@ import {
   getSystemStatus,
   getThemeInfo,
   getPopupState,
+  showSettingsWindow,
   getFullscreenAutohide,
   setFullscreenAutohide,
   getVolume,
@@ -146,6 +147,13 @@ describe("前后端通信契约", () => {
 
     expect(await getThemeInfo()).toEqual({ dark: true, accent: "#AABBCC" });
     expect(invoke).toHaveBeenCalledWith("get_theme_info");
+  });
+
+  it("showSettingsWindow 调用 Rust 统一命令而不是前端枚举窗口", async () => {
+    await showSettingsWindow();
+
+    expect(invoke).toHaveBeenCalledWith("show_settings_window");
+    expect(rustSettings).toContain("pub fn show_settings_window(");
   });
 
   it("getPopupState 提供面板内容拉取兜底", async () => {

@@ -28,6 +28,11 @@ export function getSystemStatus(): Promise<SystemStatus> {
   return invoke<SystemStatus>("get_system_status");
 }
 
+/** 设置窗口由 Rust 统一管理：已存在则显示，关闭后重建。 */
+export function showSettingsWindow(): Promise<void> {
+  return invoke("show_settings_window");
+}
+
 /** 面板内容由事件推送，这里提供拉取兜底，防止 listener 注册晚于事件。 */
 export function getPopupState(): Promise<{ kind: string; focus?: string } | null> {
   return invoke<{ kind: string; focus?: string } | null>("get_popup_state");
